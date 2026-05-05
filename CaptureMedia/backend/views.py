@@ -13,3 +13,6 @@ def LoginPage(request):
 
 def Sign_upPage(request):
     return render (request ,"sign-up.html")
+
+def ContactPage(request):
+    return render(request, "contact.html")

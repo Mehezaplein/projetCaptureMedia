@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact - CaptureMedia{% endblock %}
+
+{% block content %}
+<!-- contact area start -->
+<section class="rs-contact-area pt-100 pb-100">
+    <div class="container">
+        <div class="row g-5">
+            <!-- Contact Info -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="rs-contact-info-wrapper">
+                    <div class="rs-section-title mb-30">
+                        <h2 class="rs-section-title-text">Contactez-nous</h2>
+                        <p>Nous sommes disponibles pour répondre à toutes vos questions.</p>
+                    </div>
+
+                    <div class="rs-contact-info-item d-flex gap-15 mb-25">
+                        <div class="rs-contact-info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                            </svg>
+                        </div>
+                        <div class="rs-contact-info-text">
+                            <h6>Adresse</h6>
+                            <p>374 William S Canning Blvd, Fall River MA 02721, USA</p>
+                        </div>
+                    </div>
+
+                    <div class="rs-contact-info-item d-flex gap-15 mb-25">
+                        <div class="rs-contact-info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/>
+                            </svg>
+                        </div>
+                        <div class="rs-contact-info-text">
+                            <h6>Téléphone</h6>
+                            <p><a href="tel:+12346691234">+123-4669-1234</a></p>
+                        </div>
+                    </div>
+
+                    <div class="rs-contact-info-item d-flex gap-15 mb-25">
+                        <div class="rs-contact-info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
+                            </svg>
+                        </div>
+                        <div class="rs-contact-info-text">
+                            <h6>Email</h6>
+                            <p><a href="mailto:support@capturemedia.com">support@capturemedia.com</a></p>
+                        </div>
+                    </div>
+
+                    <div class="rs-contact-social mt-30">
+                        <h6 class="mb-15">Suivez-nous</h6>
+                        <div class="rs-theme-social theme-social">
+                            <a href="#"><i class="ri-facebook-fill"></i></a>
+                            <a href="#"><i class="ri-instagram-line"></i></a>
+                            <a href="#"><i class="ri-twitter-x-line"></i></a>
+                            <a href="#"><i class="ri-linkedin-fill"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="rs-contact-form-wrapper">
+                    <div class="rs-section-title mb-30">
+                        <h2 class="rs-section-title-text">Envoyez-nous un message</h2>
+                        <p>Remplissez le formulaire ci-dessous et nous vous répondrons dans les plus brefs délais.</p>
+                    </div>
+
+                    <form action="#" method="post" class="rs-contact-form">
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="rs-form-group">
+                                    <label for="contact-name">Nom complet <span class="text-danger">*</span></label>
+                                    <input type="text" id="contact-name" name="name" placeholder="Votre nom" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="rs-form-group">
+                                    <label for="contact-email">Email <span class="text-danger">*</span></label>
+                                    <input type="email" id="contact-email" name="email" placeholder="votre@email.com" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="rs-form-group">
+                                    <label for="contact-phone">Téléphone</label>
+                                    <input type="tel" id="contact-phone" name="phone" placeholder="+1 234 567 890">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="rs-form-group">
+                                    <label for="contact-subject">Sujet <span class="text-danger">*</span></label>
+                                    <input type="text" id="contact-subject" name="subject" placeholder="Sujet de votre message" required>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="rs-form-group">
+                                    <label for="contact-message">Message <span class="text-danger">*</span></label>
+                                    <textarea id="contact-message" name="message" rows="6" placeholder="Écrivez votre message ici..." required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="rs-btn">
+                                    Envoyer le message
+                                    <span class="icon-box">
+                                        <svg class="icon-first" width="17" height="12" viewBox="0 0 17 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15.3153 5.0991C13.1189 5.0991 11.1171 3.0991 11.1171 0.900901V0H9.31532V0.900901C9.31532 2.4991 10.0162 3.9982 11.1162 5.0991H0V6.9009H11.1162C10.0162 8.0018 9.31532 9.5009 9.31532 11.0991V12H11.1171V11.0991C11.1171 8.9018 13.1189 6.9009 15.3153 6.9009H16.2162V5.0991H15.3153Z" fill="white"></path>
+                                        </svg>
+                                        <svg class="icon-second" width="17" height="12" viewBox="0 0 17 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15.3153 5.0991C13.1189 5.0991 11.1171 3.0991 11.1171 0.900901V0H9.31532V0.900901C9.31532 2.4991 10.0162 3.9982 11.1162 5.0991H0V6.9009H11.1162C10.0162 8.0018 9.31532 9.5009 9.31532 11.0991V12H11.1171V11.0991C11.1171 8.9018 13.1189 6.9009 15.3153 6.9009H16.2162V5.0991H15.3153Z" fill="white"></path>
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- contact area end -->
+
+<!-- map area start -->
+<section class="rs-map-area pb-100">
+    <div class="container">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="rs-map-wrapper">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d47540.38766382987!2d-71.1533!3d41.7012!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89e4e1b5a2f3f3a5%3A0x4c2a58e3c2b5f3a5!2sFall%20River%2C%20MA!5e0!3m2!1sen!2sus!4v1620000000000!5m2!1sen!2sus"
+                        width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- map area end -->
+{% endblock %}
