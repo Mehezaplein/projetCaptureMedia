@@ -1,0 +1,76 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:categories_list' %}">Catégories</a> / {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:categories_list' %}" class="btn btn-ghost">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label">Nom <span class="required">*</span></label>
+        <input type="text" name="name" class="form-control" required autofocus
+               value="{{ category.name|default:'' }}" placeholder="Ex : Politique, Sport, Culture…" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3"
+                  placeholder="Courte description de la catégorie…">{{ category.description|default:'' }}</textarea>
+      </div>
+
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Catégorie parente</label>
+          <select name="parent" class="form-select">
+            <option value="">— Aucune (racine) —</option>
+            {% for p in parents %}
+            <option value="{{ p.pk }}" {% if category.parent_id == p.pk %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ordre d'affichage</label>
+          <input type="number" name="order" class="form-control" min="0"
+                 value="{{ category.order|default:0 }}" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Image de couverture</label>
+        {% if category.image %}
+        <div style="margin-bottom:10px;">
+          <img src="{{ category.image.url }}" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--border);" />
+        </div>
+        {% endif %}
+        <input type="file" name="image" class="form-control" accept="image/*" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-check">
+          <input type="checkbox" name="is_active" {% if not category or category.is_active %}checked{% endif %} />
+          <span class="form-check-label">Catégorie active</span>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+        <a href="{% url 'dashboard:categories_list' %}" class="btn btn-ghost">Annuler</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          {% if category %}Enregistrer{% else %}Créer la catégorie{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

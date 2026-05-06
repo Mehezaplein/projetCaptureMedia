@@ -1,0 +1,69 @@
+{% if page_obj.object_list %}
+<div class="media-grid">
+  {% for media in page_obj %}
+  <div class="media-item" id="media-{{ media.pk }}">
+    {% if media.file_type == 'image' %}
+      <img src="{{ media.file.url }}" alt="{{ media.alt_text|default:media.title }}" class="media-thumb" loading="lazy" />
+    {% elif media.file_type == 'video' %}
+      <div class="media-thumb-placeholder"><i class="bi bi-play-circle-fill text-yellow"></i></div>
+    {% elif media.file_type == 'audio' %}
+      <div class="media-thumb-placeholder"><i class="bi bi-music-note-beamed text-yellow"></i></div>
+    {% else %}
+      <div class="media-thumb-placeholder"><i class="bi bi-file-earmark-text"></i></div>
+    {% endif %}
+
+    <div class="media-actions">
+      <button onclick="copyUrl('{{ media.file.url }}')" class="btn btn-secondary btn-sm btn-icon" title="Copier l'URL">
+        <i class="bi bi-copy"></i>
+      </button>
+      <form hx-post="{% url 'dashboard:media_delete' media.pk %}"
+            hx-target="#media-{{ media.pk }}"
+            hx-swap="outerHTML swap:0.2s"
+            hx-confirm="Supprimer ce fichier définitivement ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </form>
+    </div>
+
+    <div class="media-info">
+      <div class="media-name" title="{{ media.title|default:media.file.name }}">
+        {{ media.title|default:media.file.name|truncatechars:22 }}
+      </div>
+      <div class="media-size">{{ media.file_size_display }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="margin-top:20px;">
+  {% if page_obj.has_previous %}
+  <a class="page-link" hx-get="{% url 'dashboard:media_library' %}?page={{ page_obj.previous_page_number }}&type={{ type_filter }}"
+     hx-target="#media-grid"><i class="bi bi-chevron-left"></i></a>
+  {% endif %}
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+      <span class="page-link active">{{ num }}</span>
+    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+      <a class="page-link" hx-get="{% url 'dashboard:media_library' %}?page={{ num }}&type={{ type_filter }}"
+         hx-target="#media-grid">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page_obj.has_next %}
+  <a class="page-link" hx-get="{% url 'dashboard:media_library' %}?page={{ page_obj.next_page_number }}&type={{ type_filter }}"
+     hx-target="#media-grid"><i class="bi bi-chevron-right"></i></a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <i class="bi bi-images"></i>
+    <h3>Aucun média</h3>
+    <p>Glissez des fichiers dans la zone d'upload pour commencer.</p>
+  </div>
+</div>
+{% endif %}

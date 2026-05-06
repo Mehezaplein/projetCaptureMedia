@@ -1,0 +1,235 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:articles_list' %}">Articles</a> / {{ page_title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .editor-container { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid var(--border) !important; }
+  .ql-container.ql-snow { border: none !important; min-height: 350px; font-size: 15px; }
+  #image-preview { display: none; width: 180px; height: 120px; object-fit: cover; border-radius: 8px; border: 2px solid var(--cm-yellow); margin-top: 10px; }
+  .tags-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; min-height: 44px; cursor: text; }
+  .tag-chip { background: var(--cm-yellow); color: #111; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+  .tag-chip button { background: none; border: none; color: #111; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+  .tags-input input { border: none; background: transparent; color: var(--text); outline: none; font-size: 13.5px; font-family: inherit; flex: 1; min-width: 120px; padding: 2px 0; }
+  .options-panel { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .sidebar-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; }
+  @media (max-width: 900px) { .sidebar-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:articles_list' %}" class="btn btn-ghost">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" id="articleForm">
+  {% csrf_token %}
+
+  <div class="sidebar-layout">
+    <!-- Main column -->
+    <div>
+      <!-- Title -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Titre <span class="required">*</span></label>
+            <input type="text" name="title" class="form-control" style="font-size:18px;font-weight:600;"
+                   placeholder="Saisissez le titre de l'article…"
+                   value="{{ article.title|default:'' }}" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Excerpt -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Résumé</span></div>
+        <div class="card-body">
+          <textarea name="excerpt" class="form-control" rows="3"
+                    placeholder="Courte description affichée en aperçu (max. 500 caractères)…"
+                    maxlength="500">{{ article.excerpt|default:'' }}</textarea>
+          <div class="form-hint">Affiché dans les listes et les résultats de recherche.</div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Contenu <span class="required">*</span></span></div>
+        <div class="card-body" style="padding-bottom:0;">
+          <div class="editor-container">
+            <div id="quill-editor">{{ article.content|default:''|safe }}</div>
+          </div>
+          <input type="hidden" name="content" id="contentInput" />
+          <div class="form-hint" style="padding:8px 0 4px;">Rédigez le contenu complet de l'article.</div>
+        </div>
+      </div>
+
+      <!-- Image -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Image à la une</span></div>
+        <div class="card-body">
+          {% if article.featured_image %}
+          <div style="margin-bottom:12px;">
+            <img src="{{ article.featured_image.url }}" style="max-width:240px;border-radius:8px;border:2px solid var(--border);" />
+            <div class="text-dim text-sm" style="margin-top:6px;">Image actuelle — en uploader une nouvelle remplacera celle-ci.</div>
+          </div>
+          {% endif %}
+          <input type="file" name="featured_image" accept="image/*" id="imageInput"
+                 onchange="previewImage(this)" class="form-control" />
+          <img id="image-preview" alt="Aperçu" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+
+      <!-- Publication -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Publication</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Statut</label>
+            <select name="status" class="form-select">
+              <option value="draft" {% if article.status == 'draft' or not article %}selected{% endif %}>Brouillon</option>
+              <option value="published" {% if article.status == 'published' %}selected{% endif %}>Publié</option>
+              <option value="archived" {% if article.status == 'archived' %}selected{% endif %}>Archivé</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Catégorie</label>
+            <select name="category" class="form-select">
+              <option value="">— Aucune catégorie —</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}" {% if article.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Options</span></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <label class="form-check">
+              <input type="checkbox" name="is_featured" {% if article.is_featured %}checked{% endif %} />
+              <span class="form-check-label"><i class="bi bi-star-fill text-yellow"></i> À la une</span>
+            </label>
+            <label class="form-check">
+              <input type="checkbox" name="is_breaking" {% if article.is_breaking %}checked{% endif %} />
+              <span class="form-check-label"><i class="bi bi-lightning-charge-fill text-danger"></i> Breaking news</span>
+            </label>
+            <label class="form-check">
+              <input type="checkbox" name="allow_comments" {% if not article or article.allow_comments %}checked{% endif %} />
+              <span class="form-check-label"><i class="bi bi-chat-left"></i> Autoriser les commentaires</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Tags</span></div>
+        <div class="card-body">
+          <div class="tags-input" id="tagsContainer" onclick="document.getElementById('tagInput').focus()">
+            <input type="text" id="tagInput" placeholder="Ajouter un tag…" onkeydown="handleTagInput(event)" />
+          </div>
+          <input type="hidden" name="tags" id="tagsHidden" value="{{ article_tags|default:'' }}" />
+          <div class="form-hint">Appuyez sur <kbd>Entrée</kbd> ou <kbd>,</kbd> pour ajouter.</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button type="submit" name="status" value="{{ article.status|default:'draft' }}" class="btn btn-primary" style="width:100%;justify-content:center;">
+          <i class="bi bi-check-lg"></i>
+          {% if article %}Enregistrer les modifications{% else %}Créer l'article{% endif %}
+        </button>
+        {% if not article %}
+        <button type="submit" name="status_override" value="published" class="btn btn-success" style="width:100%;justify-content:center;" onclick="document.querySelector('[name=status]').value='published'">
+          <i class="bi bi-send-check"></i> Publier maintenant
+        </button>
+        {% endif %}
+        <a href="{% url 'dashboard:articles_list' %}" class="btn btn-ghost" style="width:100%;justify-content:center;">
+          Annuler
+        </a>
+      </div>
+
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Quill editor
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Rédigez votre article ici…',
+    modules: {
+      toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['blockquote', 'code-block'],
+        ['link', 'image'],
+        ['clean']
+      ]
+    }
+  });
+
+  document.getElementById('articleForm').addEventListener('submit', function() {
+    document.getElementById('contentInput').value = quill.root.innerHTML;
+  });
+
+  // Image preview
+  function previewImage(input) {
+    const preview = document.getElementById('image-preview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // Tags management
+  const tagsContainer = document.getElementById('tagsContainer');
+  const tagsHidden = document.getElementById('tagsHidden');
+  let tags = tagsHidden.value ? tagsHidden.value.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  function renderTags() {
+    const input = document.getElementById('tagInput');
+    tagsContainer.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    tags.forEach(tag => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${tag} <button type="button" onclick="removeTag('${tag}')">×</button>`;
+      tagsContainer.insertBefore(chip, input);
+    });
+    tagsHidden.value = tags.join(',');
+  }
+
+  function handleTagInput(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = e.target.value.trim().replace(',', '');
+      if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+      e.target.value = '';
+    }
+  }
+
+  function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
+
+  renderTags();
+</script>
+{% endblock %}

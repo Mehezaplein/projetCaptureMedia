@@ -1,0 +1,160 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if poll %}Modifier{% else %}Ajouter{% endif %} un sondage{% endblock %}
+{% block breadcrumb %}{% if poll %}Modifier{% else %}Ajouter{% endif %} un sondage{% endblock %}
+
+{% block extra_head %}
+<style>
+  .choices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .choice-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .choice-item input {
+    flex: 1;
+  }
+  .choice-remove-btn {
+    background: none;
+    border: none;
+    color: #e53e3e;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{% if poll %}Modifier le sondage{% else %}Nouveau sondage{% endif %}</h1>
+    <p class="page-subtitle">{% if poll %}Mettre à jour les informations{% else %}Créer un nouveau sondage{% endif %}</p>
+  </div>
+  <a href="{% url 'dashboard:polls_list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i>
+    Retour
+  </a>
+</div>
+
+<div class="card" style="max-width: 700px;">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>{{ form.non_field_errors }}</div>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">
+          Question <span class="required">*</span>
+        </label>
+        {{ form.question }}
+        {% if form.question.errors %}
+          <div class="text-danger text-sm">{{ form.question.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <div class="text-danger text-sm">{{ form.description.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Options de réponse</label>
+        <div class="choices-list" id="choices-list">
+          {% if formset %}
+            {% for choice_form in formset %}
+              <div class="choice-item" id="choice-{{ forloop.counter0 }}">
+                {{ choice_form.text }}
+                <button type="button" class="choice-remove-btn" onclick="removeChoice({{ forloop.counter0 }})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="choice-item" id="choice-0">
+              <input type="text" class="form-control" placeholder="Option 1" />
+              <button type="button" class="choice-remove-btn" onclick="removeChoice(0)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            <div class="choice-item" id="choice-1">
+              <input type="text" class="form-control" placeholder="Option 2" />
+              <button type="button" class="choice-remove-btn" onclick="removeChoice(1)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          {% endif %}
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 12px;" onclick="addChoice()">
+          <i class="bi bi-plus-lg"></i>
+          Ajouter une option
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-check">
+          {{ form.allow_multiple }}
+          <span>Autoriser les réponses multiples</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-check">
+          {{ form.is_active }}
+          <span>Activer ce sondage</span>
+        </label>
+      </div>
+
+      <div class="divider" style="margin: 24px 0;"></div>
+
+      <div class="flex gap-8" style="justify-content: flex-end;">
+        <a href="{% url 'dashboard:polls_list' %}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          {% if poll %}Mettre à jour{% else %}Créer{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let choiceCount = {% if formset %}{{ formset|length }}{% else %}2{% endif %};
+
+  function addChoice() {
+    const list = document.getElementById('choices-list');
+    const item = document.createElement('div');
+    item.className = 'choice-item';
+    item.id = 'choice-' + choiceCount;
+    item.innerHTML = `
+      <input type="text" class="form-control" placeholder="Option ${choiceCount + 1}" />
+      <button type="button" class="choice-remove-btn" onclick="removeChoice(${choiceCount})">
+        <i class="bi bi-trash"></i>
+      </button>
+    `;
+    list.appendChild(item);
+    choiceCount++;
+  }
+
+  function removeChoice(index) {
+    const item = document.getElementById('choice-' + index);
+    if (item) {
+      item.remove();
+    }
+  }
+</script>
+{% endblock %}

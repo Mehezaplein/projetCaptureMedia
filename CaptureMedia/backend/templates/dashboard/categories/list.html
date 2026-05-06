@@ -1,0 +1,36 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Catégories{% endblock %}
+{% block breadcrumb %}Catégories{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Catégories</h1>
+    <p class="page-subtitle">Gérer les catégories d'articles</p>
+  </div>
+  <a href="{% url 'dashboard:category_add' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i>
+    Ajouter une catégorie
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="search-bar" hx-post="{% url 'dashboard:categories_list' %}" hx-trigger="keyup delay:500ms" hx-target="#categories-table" hx-swap="innerHTML">
+      <i class="bi bi-search"></i>
+      <input type="text" name="search" placeholder="Chercher une catégorie..." />
+    </div>
+  </div>
+
+  <div id="categories-table">
+    {% include 'dashboard/categories/_table.html' %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('htmx:config:init:request', function(e) {
+    e.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  });
+</script>
+{% endblock %}

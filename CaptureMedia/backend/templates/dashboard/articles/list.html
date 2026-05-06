@@ -1,0 +1,58 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Articles{% endblock %}
+{% block breadcrumb %}Articles{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Articles</h1>
+    <p class="page-subtitle">{{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }} au total</p>
+  </div>
+  <a href="{% url 'dashboard:article_add' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Nouvel article
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="filters-row" id="filters-form">
+  <div class="search-bar">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un article…"
+           hx-get="{% url 'dashboard:articles_list' %}"
+           hx-trigger="keyup changed delay:400ms"
+           hx-target="#articles-table"
+           hx-include="#filters-form"
+           hx-indicator="#search-spinner" />
+    <span class="htmx-indicator" id="search-spinner"></span>
+  </div>
+
+  <select name="status" class="filter-select"
+          hx-get="{% url 'dashboard:articles_list' %}"
+          hx-trigger="change"
+          hx-target="#articles-table"
+          hx-include="#filters-form">
+    <option value="">Tous les statuts</option>
+    <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Publiés</option>
+    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Brouillons</option>
+    <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archivés</option>
+  </select>
+
+  <select name="category" class="filter-select"
+          hx-get="{% url 'dashboard:articles_list' %}"
+          hx-trigger="change"
+          hx-target="#articles-table"
+          hx-include="#filters-form">
+    <option value="">Toutes les catégories</option>
+    {% for cat in categories %}
+    <option value="{{ cat.pk }}" {% if category_filter == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div id="articles-table">
+    {% include 'dashboard/articles/_table.html' %}
+  </div>
+</div>
+{% endblock %}

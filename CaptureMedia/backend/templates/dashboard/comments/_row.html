@@ -1,0 +1,40 @@
+<tr id="comment-{{ comment.id }}">
+  <td class="font-bold">{{ comment.author_name }}</td>
+  <td class="text-sm truncate" style="max-width: 200px;" title="{{ comment.content }}">{{ comment.content|truncatewords:15 }}</td>
+  <td class="text-sm">
+    <a href="#" class="text-yellow">{{ comment.article.title|truncatewords:3 }}</a>
+  </td>
+  <td>
+    {% if comment.status == 'pending' %}
+      <span class="badge badge-pending"><i class="bi bi-clock"></i> En attente</span>
+    {% elif comment.status == 'approved' %}
+      <span class="badge badge-approved"><i class="bi bi-check-circle"></i> Approuvé</span>
+    {% elif comment.status == 'rejected' %}
+      <span class="badge badge-rejected"><i class="bi bi-x-circle"></i> Rejeté</span>
+    {% elif comment.status == 'spam' %}
+      <span class="badge badge-archived"><i class="bi bi-exclamation-circle"></i> Spam</span>
+    {% endif %}
+  </td>
+  <td>
+    <div class="flex gap-8" style="justify-content: flex-start;">
+      {% if comment.status != 'approved' %}
+        <button hx-post="{% url 'dashboard:comment_action' comment.id %}" hx-vals='{"action":"approve"}' hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" class="btn btn-success btn-sm btn-icon" title="Approuver">
+          <i class="bi bi-check-circle"></i>
+        </button>
+      {% endif %}
+      {% if comment.status != 'rejected' %}
+        <button hx-post="{% url 'dashboard:comment_action' comment.id %}" hx-vals='{"action":"reject"}' hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Rejeter">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      {% endif %}
+      {% if comment.status != 'spam' %}
+        <button hx-post="{% url 'dashboard:comment_action' comment.id %}" hx-vals='{"action":"spam"}' hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" class="btn btn-ghost btn-sm btn-icon" title="Marquer comme spam">
+          <i class="bi bi-exclamation-triangle"></i>
+        </button>
+      {% endif %}
+      <button hx-delete="{% url 'dashboard:comment_delete' comment.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer ce commentaire ?" hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </td>
+</tr>

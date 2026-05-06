@@ -1,0 +1,41 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Commentaires{% endblock %}
+{% block breadcrumb %}Modération des commentaires{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Commentaires</h1>
+    <p class="page-subtitle">Modérer et gérer les commentaires</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="filters-row">
+      <select class="filter-select" hx-post="{% url 'dashboard:comments_list' %}" hx-trigger="change" hx-target="#comments-table" hx-swap="innerHTML" name="status">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="approved">Approuvés</option>
+        <option value="rejected">Rejetés</option>
+        <option value="spam">Spam</option>
+      </select>
+      <div class="search-bar" style="margin-left: auto;" hx-post="{% url 'dashboard:comments_list' %}" hx-trigger="keyup delay:500ms" hx-target="#comments-table" hx-swap="innerHTML">
+        <i class="bi bi-search"></i>
+        <input type="text" name="search" placeholder="Chercher par auteur ou contenu..." />
+      </div>
+    </div>
+  </div>
+
+  <div id="comments-table">
+    {% include 'dashboard/comments/_table.html' %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('htmx:config:init:request', function(e) {
+    e.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  });
+</script>
+{% endblock %}

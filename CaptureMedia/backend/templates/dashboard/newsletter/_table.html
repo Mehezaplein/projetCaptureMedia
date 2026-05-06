@@ -1,0 +1,42 @@
+<div class="table-wrapper">
+  {% if subscribers %}
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Statut</th>
+          <th>Date d'inscription</th>
+          <th style="width:100px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for subscriber in subscribers %}
+        <tr id="subscriber-{{ subscriber.id }}">
+          <td class="font-bold">{{ subscriber.email }}</td>
+          <td>
+            {% if subscriber.is_confirmed %}
+              <span class="badge badge-approved"><i class="bi bi-check-circle"></i> Confirmé</span>
+            {% elif subscriber.is_active %}
+              <span class="badge badge-pending"><i class="bi bi-clock"></i> En attente</span>
+            {% else %}
+              <span class="badge badge-inactive"><i class="bi bi-x-circle"></i> Désinscrit</span>
+            {% endif %}
+          </td>
+          <td class="text-sm">{{ subscriber.created_at|date:'d M Y' }}</td>
+          <td>
+            <button hx-delete="{% url 'dashboard:newsletter_delete' subscriber.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cet abonné ?" hx-target="#subscriber-{{ subscriber.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-envelope-at"></i>
+      <h3>Aucun abonné</h3>
+      <p>Il n'y a aucun abonné à la newsletter pour le moment.</p>
+    </div>
+  {% endif %}
+</div>

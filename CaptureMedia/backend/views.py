@@ -1,28 +1,39 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
-# Create your views here.
 
-def ForgotPage (request):
-    return render (request , "forgot.html")
+def IndexPage(request):
+    return render(request, "index.html")
 
-def IndexPage (request):
-    return render (request , "index.html")
 
 def LoginPage(request):
-    return render (request , "login.html")
+    return render(request, "login.html")
+
 
 def Sign_upPage(request):
-    return render (request ,"sign-up.html")
+    return render(request, "sign-up.html")
+
 
 def ContactPage(request):
     return render(request, "contact.html")
+
+
+def ForgotPage(request):
+    return render(request, "forgot.html")
+
+
+# ── Anciennes pages admin → redirigées vers le dashboard ──────────────────────
+
 def AddAnnoncePage(request):
-    return render(request, "add-annonce.html")
+    return redirect('/dashboard/articles/ajouter/')
+
+
 def AddAdminPage(request):
-    return render (request , "addAdmin.html")
+    return redirect('/dashboard/utilisateurs/ajouter/')
+
 
 def ListeAdminPage(request):
-    return render (request , "listeAdmin.html")
+    return redirect('/dashboard/utilisateurs/')
+
 
 def EditAdminPage(request):
-    return render (request, "EditAdmin.html")
+    return redirect('/dashboard/utilisateurs/')

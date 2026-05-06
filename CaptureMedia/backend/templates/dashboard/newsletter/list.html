@@ -1,0 +1,83 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Newsletter{% endblock %}
+{% block breadcrumb %}Abonnés à la newsletter{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Newsletter</h1>
+    <p class="page-subtitle">Gérer les abonnés</p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="flex items-center" style="gap: 12px;">
+      <div class="stat-icon">
+        <i class="bi bi-envelope-at"></i>
+      </div>
+      <div>
+        <div class="stat-label">Total abonnés</div>
+        <div class="stat-value">{{ total_subscribers }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="flex items-center" style="gap: 12px;">
+      <div class="stat-icon">
+        <i class="bi bi-check-circle"></i>
+      </div>
+      <div>
+        <div class="stat-label">Confirmés</div>
+        <div class="stat-value">{{ confirmed_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="flex items-center" style="gap: 12px;">
+      <div class="stat-icon">
+        <i class="bi bi-clock"></i>
+      </div>
+      <div>
+        <div class="stat-label">En attente</div>
+        <div class="stat-value">{{ pending_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="flex items-center" style="gap: 12px;">
+      <div class="stat-icon">
+        <i class="bi bi-x-circle"></i>
+      </div>
+      <div>
+        <div class="stat-label">Désinscriptions</div>
+        <div class="stat-value">{{ unsubscribed_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="search-bar" hx-post="{% url 'dashboard:newsletter_list' %}" hx-trigger="keyup delay:500ms" hx-target="#newsletter-table" hx-swap="innerHTML">
+      <i class="bi bi-search"></i>
+      <input type="text" name="search" placeholder="Chercher un abonné..." />
+    </div>
+  </div>
+
+  <div id="newsletter-table">
+    {% include 'dashboard/newsletter/_table.html' %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('htmx:config:init:request', function(e) {
+    e.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  });
+</script>
+{% endblock %}

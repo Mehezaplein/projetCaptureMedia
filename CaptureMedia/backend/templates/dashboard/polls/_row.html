@@ -1,0 +1,28 @@
+<tr id="poll-{{ poll.id }}">
+  <td class="font-bold">{{ poll.question }}</td>
+  <td class="text-sm">
+    <div class="flex items-center gap-8">
+      <span>{{ poll.total_votes }}</span>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" style="width: 100%;"></div>
+      </div>
+    </div>
+  </td>
+  <td class="text-sm">{{ poll.created_at|date:'d M Y' }}</td>
+  <td>
+    <label class="toggle-switch">
+      <input type="checkbox" {% if poll.is_active %}checked{% endif %} hx-post="{% url 'dashboard:poll_toggle' poll.id %}" hx-target="#poll-{{ poll.id }}" hx-swap="outerHTML swap:1s" />
+      <span class="toggle-slider"></span>
+    </label>
+  </td>
+  <td>
+    <div class="flex gap-8">
+      <a href="{% url 'dashboard:poll_edit' poll.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
+        <i class="bi bi-pencil"></i>
+      </a>
+      <button hx-delete="{% url 'dashboard:poll_delete' poll.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer ce sondage ?" hx-target="#poll-{{ poll.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </td>
+</tr>

@@ -1,0 +1,52 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Sondages{% endblock %}
+{% block breadcrumb %}Gestion des sondages{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Sondages</h1>
+    <p class="page-subtitle">Créer et gérer les sondages</p>
+  </div>
+  <a href="{% url 'dashboard:poll_add' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i>
+    Ajouter un sondage
+  </a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    {% if polls %}
+      <table>
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Votes</th>
+            <th>Créé le</th>
+            <th>Statut</th>
+            <th style="width:150px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for poll in polls %}
+          {% include 'dashboard/polls/_row.html' %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-bar-chart-line"></i>
+        <h3>Aucun sondage</h3>
+        <p>Créez votre premier sondage pour engager votre audience.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('htmx:config:init:request', function(e) {
+    e.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  });
+</script>
+{% endblock %}

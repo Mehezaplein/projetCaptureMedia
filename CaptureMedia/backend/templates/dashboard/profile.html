@@ -1,0 +1,173 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Mon profil{% endblock %}
+{% block breadcrumb %}Mon profil{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Mon profil</h1>
+    <p class="page-subtitle">Gérer mes informations personnelles</p>
+  </div>
+</div>
+
+<div style="max-width: 700px;">
+  <!-- Profile Info Card -->
+  <div class="card mb-16">
+    <div class="card-header">
+      <h2 class="card-title">Informations personnelles</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{% url 'dashboard:profile' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>{{ form.non_field_errors }}</div>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">Nom d'utilisateur</label>
+          <input type="text" class="form-control" value="{{ request.user.username }}" disabled />
+          <p class="form-hint">Ne peut pas être modifié</p>
+        </div>
+
+        <div class="form-grid cols-2">
+          <div class="form-group">
+            <label class="form-label">Prénom</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div class="text-danger text-sm">{{ form.first_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nom</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div class="text-danger text-sm">{{ form.last_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <div class="text-danger text-sm">{{ form.email.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          Enregistrer les modifications
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Sécurité</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{% url 'dashboard:profile' %}">
+        {% csrf_token %}
+
+        {% if password_form.non_field_errors %}
+        <div class="alert alert-error">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>{{ password_form.non_field_errors }}</div>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">Mot de passe actuel <span class="required">*</span></label>
+          {{ password_form.old_password }}
+          {% if password_form.old_password.errors %}
+            <div class="text-danger text-sm">{{ password_form.old_password.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nouveau mot de passe <span class="required">*</span></label>
+          {{ password_form.new_password1 }}
+          {% if password_form.new_password1.errors %}
+            <div class="text-danger text-sm">{{ password_form.new_password1.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirmer le nouveau mot de passe <span class="required">*</span></label>
+          {{ password_form.new_password2 }}
+          {% if password_form.new_password2.errors %}
+            <div class="text-danger text-sm">{{ password_form.new_password2.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <button type="submit" name="change_password" value="1" class="btn btn-primary">
+          <i class="bi bi-shield-check"></i>
+          Changer le mot de passe
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Account Info -->
+  <div class="card mt-24">
+    <div class="card-header">
+      <h2 class="card-title">Informations du compte</h2>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+        <div>
+          <p class="text-sm text-muted" style="margin-bottom: 4px;">Rôle</p>
+          <p class="font-bold">
+            {% if request.user.is_superuser %}
+              <span class="badge badge-yellow"><i class="bi bi-shield-check"></i> Super Admin</span>
+            {% elif request.user.is_staff %}
+              <span class="badge badge-approved"><i class="bi bi-person-check"></i> Rédacteur</span>
+            {% else %}
+              <span class="badge badge-draft">Contributeur</span>
+            {% endif %}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-muted" style="margin-bottom: 4px;">Statut</p>
+          <p class="font-bold">
+            {% if request.user.is_active %}
+              <span class="badge badge-active"><i class="bi bi-check-circle"></i> Actif</span>
+            {% else %}
+              <span class="badge badge-inactive"><i class="bi bi-x-circle"></i> Inactif</span>
+            {% endif %}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-muted" style="margin-bottom: 4px;">Date d'inscription</p>
+          <p class="font-bold">{{ request.user.date_joined|date:'d M Y' }}</p>
+        </div>
+
+        <div>
+          <p class="text-sm text-muted" style="margin-bottom: 4px;">Dernière connexion</p>
+          <p class="font-bold">{{ request.user.last_login|date:'d M Y H:i'|default:'Jamais' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .mt-24 {
+    margin-top: 24px;
+  }
+</style>
+{% endblock %}

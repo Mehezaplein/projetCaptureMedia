@@ -1,0 +1,125 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:users_list' %}">Utilisateurs</a> / {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:users_list' %}" class="btn btn-ghost">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <div class="card-body">
+    <form method="POST">
+      {% csrf_token %}
+
+      {% if not user_obj %}
+      <div class="form-group">
+        <label class="form-label">Nom d'utilisateur <span class="required">*</span></label>
+        <input type="text" name="username" class="form-control" required autofocus
+               placeholder="identifiant de connexion…" />
+        <div class="form-hint">Lettres, chiffres et @/./+/-/_ uniquement.</div>
+      </div>
+      {% else %}
+      <div class="form-group">
+        <label class="form-label">Nom d'utilisateur</label>
+        <input type="text" class="form-control" value="{{ user_obj.username }}" disabled
+               style="opacity:0.6;cursor:not-allowed;" />
+        <div class="form-hint">L'identifiant ne peut pas être modifié.</div>
+      </div>
+      {% endif %}
+
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input type="text" name="first_name" class="form-control"
+                 value="{{ user_obj.first_name|default:'' }}" placeholder="Prénom…" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input type="text" name="last_name" class="form-control"
+                 value="{{ user_obj.last_name|default:'' }}" placeholder="Nom de famille…" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Adresse email</label>
+        <input type="email" name="email" class="form-control"
+               value="{{ user_obj.email|default:'' }}" placeholder="email@exemple.com" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          {% if user_obj %}Nouveau mot de passe{% else %}Mot de passe <span class="required">*</span>{% endif %}
+        </label>
+        <div style="position:relative;">
+          <input type="password" name="password" class="form-control" id="pwdInput"
+                 {% if not user_obj %}required{% endif %}
+                 placeholder="{% if user_obj %}Laisser vide pour ne pas changer…{% else %}Choisir un mot de passe…{% endif %}" />
+          <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;" title="Afficher/masquer">
+            <i class="bi bi-eye" id="pwdEye"></i>
+          </button>
+        </div>
+        {% if user_obj %}
+        <div class="form-hint">Laissez vide pour conserver le mot de passe actuel.</div>
+        {% endif %}
+      </div>
+
+      <div class="divider" style="margin:20px 0;"></div>
+
+      <div style="margin-bottom:20px;">
+        <div class="form-label" style="margin-bottom:12px;">Permissions</div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <label class="form-check">
+            <input type="checkbox" name="is_staff" {% if user_obj.is_staff %}checked{% endif %} />
+            <span class="form-check-label">
+              <strong>Rédacteur</strong> — Accès au dashboard, gestion des articles
+            </span>
+          </label>
+          <label class="form-check">
+            <input type="checkbox" name="is_superuser" {% if user_obj.is_superuser %}checked{% endif %} />
+            <span class="form-check-label">
+              <strong>Super Administrateur</strong> — Accès complet, paramètres, utilisateurs
+            </span>
+          </label>
+          {% if user_obj %}
+          <label class="form-check">
+            <input type="checkbox" name="is_active" {% if user_obj.is_active %}checked{% endif %} />
+            <span class="form-check-label">Compte actif</span>
+          </label>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <a href="{% url 'dashboard:users_list' %}" class="btn btn-ghost">Annuler</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          {% if user_obj %}Enregistrer{% else %}Créer l'utilisateur{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function togglePwd() {
+    const input = document.getElementById('pwdInput');
+    const eye = document.getElementById('pwdEye');
+    if (input.type === 'password') {
+      input.type = 'text';
+      eye.className = 'bi bi-eye-slash';
+    } else {
+      input.type = 'password';
+      eye.className = 'bi bi-eye';
+    }
+  }
+</script>
+{% endblock %}

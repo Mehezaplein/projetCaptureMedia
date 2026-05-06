@@ -1,0 +1,47 @@
+<div class="table-wrapper">
+  {% if categories %}
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Description</th>
+          <th>Ordre</th>
+          <th>Statut</th>
+          <th style="width:100px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+        <tr>
+          <td class="font-bold">{{ category.name }}</td>
+          <td class="text-sm text-muted truncate" style="max-width:200px;">{{ category.description|default:"-" }}</td>
+          <td class="text-sm">{{ category.order|default:"-" }}</td>
+          <td>
+            {% if category.is_active %}
+              <span class="badge badge-active"><i class="bi bi-check-circle"></i> Actif</span>
+            {% else %}
+              <span class="badge badge-inactive"><i class="bi bi-x-circle"></i> Inactif</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="flex gap-8">
+              <a href="{% url 'dashboard:category_edit' category.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button hx-delete="{% url 'dashboard:category_delete' category.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cette catégorie ?" hx-target="closest tr" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-folder2-open"></i>
+      <h3>Aucune catégorie</h3>
+      <p>Créez votre première catégorie pour organiser vos articles.</p>
+    </div>
+  {% endif %}
+</div>
