@@ -1,0 +1,26 @@
+<div class="table-wrapper">
+  {% if comments %}
+    <table>
+      <thead>
+        <tr>
+          <th>Auteur</th>
+          <th>Contenu</th>
+          <th>Article</th>
+          <th>Statut</th>
+          <th style="width:180px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comment in comments %}
+        {% include 'dashboard/comments/_row.html' %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-chat-left-text"></i>
+      <h3>Aucun commentaire</h3>
+      <p>Il n'y a aucun commentaire à modérer.</p>
+    </div>
+  {% endif %}
+</div>

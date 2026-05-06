@@ -1,0 +1,250 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Paramètres{% endblock %}
+{% block breadcrumb %}Paramètres du site{% endblock %}
+
+{% block extra_head %}
+<style>
+  .settings-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .settings-tabs button, .settings-tabs a {
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all var(--transition);
+    text-decoration: none;
+  }
+  .settings-tabs button:hover, .settings-tabs a:hover {
+    color: var(--text);
+  }
+  .settings-tabs button.active, .settings-tabs a.active {
+    color: var(--cm-yellow);
+    border-bottom-color: var(--cm-yellow);
+  }
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Paramètres</h1>
+    <p class="page-subtitle">Configuration du site Capture Media</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="settings-tabs">
+    <button class="settings-tab-btn active" onclick="switchTab('general')">
+      <i class="bi bi-gear" style="margin-right: 8px;"></i>
+      Général
+    </button>
+    <button class="settings-tab-btn" onclick="switchTab('social')">
+      <i class="bi bi-share" style="margin-right: 8px;"></i>
+      Réseaux sociaux
+    </button>
+    <button class="settings-tab-btn" onclick="switchTab('comments')">
+      <i class="bi bi-chat-left-text" style="margin-right: 8px;"></i>
+      Commentaires
+    </button>
+  </div>
+
+  <!-- General Tab -->
+  <div id="tab-general" class="tab-content active">
+    <div class="card-body">
+      <form hx-post="{% url 'dashboard:settings' %}" hx-vals='{"tab":"general"}' hx-trigger="submit" hx-swap="outerHTML swap:1s">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">Nom du site <span class="required">*</span></label>
+          <input type="text" name="site_name" class="form-control" value="{{ settings.site_name }}" placeholder="Capture Media" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tagline/Sous-titre</label>
+          <input type="text" name="site_tagline" class="form-control" value="{{ settings.site_tagline }}" placeholder="Votre sous-titre ici" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description du site</label>
+          <textarea name="site_description" class="form-control" placeholder="Description du site pour le SEO">{{ settings.site_description }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Logo URL</label>
+          <input type="url" name="site_logo" class="form-control" value="{{ settings.site_logo }}" placeholder="https://..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email de contact</label>
+          <input type="email" name="contact_email" class="form-control" value="{{ settings.contact_email }}" />
+        </div>
+
+        <div class="form-grid cols-2">
+          <div class="form-group">
+            <label class="form-label">Nombre d'articles par page</label>
+            <input type="number" name="articles_per_page" class="form-control" value="{{ settings.articles_per_page|default:12 }}" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Articles en une de la page d'accueil</label>
+            <input type="number" name="featured_articles" class="form-control" value="{{ settings.featured_articles|default:5 }}" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" name="enable_comments" {% if settings.enable_comments %}checked{% endif %} />
+            <span>Activer les commentaires</span>
+          </label>
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          Enregistrer les modifications
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Social Networks Tab -->
+  <div id="tab-social" class="tab-content">
+    <div class="card-body">
+      <form hx-post="{% url 'dashboard:settings' %}" hx-vals='{"tab":"social"}' hx-trigger="submit" hx-swap="outerHTML swap:1s">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-facebook" style="color: #1877f2; margin-right: 6px;"></i>
+            Facebook URL
+          </label>
+          <input type="url" name="social_facebook" class="form-control" value="{{ settings.social_facebook }}" placeholder="https://facebook.com/..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-twitter" style="color: #1da1f2; margin-right: 6px;"></i>
+            Twitter URL
+          </label>
+          <input type="url" name="social_twitter" class="form-control" value="{{ settings.social_twitter }}" placeholder="https://twitter.com/..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-instagram" style="color: #e1306c; margin-right: 6px;"></i>
+            Instagram URL
+          </label>
+          <input type="url" name="social_instagram" class="form-control" value="{{ settings.social_instagram }}" placeholder="https://instagram.com/..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-youtube" style="color: #ff0000; margin-right: 6px;"></i>
+            YouTube URL
+          </label>
+          <input type="url" name="social_youtube" class="form-control" value="{{ settings.social_youtube }}" placeholder="https://youtube.com/..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-linkedin" style="color: #0a66c2; margin-right: 6px;"></i>
+            LinkedIn URL
+          </label>
+          <input type="url" name="social_linkedin" class="form-control" value="{{ settings.social_linkedin }}" placeholder="https://linkedin.com/..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-whatsapp" style="color: #25d366; margin-right: 6px;"></i>
+            WhatsApp (numéro avec code pays)
+          </label>
+          <input type="tel" name="social_whatsapp" class="form-control" value="{{ settings.social_whatsapp }}" placeholder="+228XXXXXXXX" />
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          Enregistrer les modifications
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Comments Tab -->
+  <div id="tab-comments" class="tab-content">
+    <div class="card-body">
+      <form hx-post="{% url 'dashboard:settings' %}" hx-vals='{"tab":"comments"}' hx-trigger="submit" hx-swap="outerHTML swap:1s">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" name="comments_require_approval" {% if settings.comments_require_approval %}checked{% endif %} />
+            <span>Modération des commentaires requise</span>
+          </label>
+          <p class="form-hint">Les commentaires doivent être approuvés avant d'être visibles</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" name="comments_require_email" {% if settings.comments_require_email %}checked{% endif %} />
+            <span>Demander un email pour commenter</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" name="comments_nested" {% if settings.comments_nested %}checked{% endif %} />
+            <span>Permettre les réponses imbriquées</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre maximum de commentaires par page</label>
+          <input type="number" name="comments_per_page" class="form-control" value="{{ settings.comments_per_page|default:20 }}" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mots-clés à bannir (séparés par des virgules)</label>
+          <textarea name="comments_banned_words" class="form-control" placeholder="Spam, word1, word2">{{ settings.comments_banned_words }}</textarea>
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          Enregistrer les modifications
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.closest('.settings-tab-btn').classList.add('active');
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Breaking News{% endblock %}
+{% block breadcrumb %}Breaking News{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title"><i class="bi bi-lightning-charge-fill text-yellow"></i> Breaking News</h1>
+    <p class="page-subtitle">Gérez le ticker d'actualités urgentes affiché sur le site</p>
+  </div>
+</div>
+
+<!-- Inline add form -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <span class="card-title">Ajouter une breaking news</span>
+  </div>
+  <div class="card-body">
+    <form hx-post="{% url 'dashboard:breaking_news_add' %}"
+          hx-target="#breaking-tbody"
+          hx-swap="afterbegin"
+          hx-on::after-request="this.reset()"
+          style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:flex-end;">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Texte <span class="required">*</span></label>
+        <input type="text" name="text" class="form-control" required maxlength="500"
+               placeholder="Texte de l'actualité urgente…" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Lien (optionnel)</label>
+        <input type="url" name="url" class="form-control" style="min-width:200px;"
+               placeholder="https://…" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Ordre</label>
+        <input type="number" name="order" class="form-control" value="0" min="0" style="width:80px;" />
+      </div>
+      <button type="submit" class="btn btn-primary" style="height:42px;">
+        <i class="bi bi-plus-lg"></i> Ajouter
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- List -->
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Ordre</th>
+          <th>Texte</th>
+          <th>Lien</th>
+          <th>Statut</th>
+          <th>Créé le</th>
+          <th style="width:120px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="breaking-tbody">
+        {% for item in items %}
+          {% include 'dashboard/breaking_news/_row.html' %}
+        {% empty %}
+          <tr id="breaking-empty">
+            <td colspan="6">
+              <div class="empty-state">
+                <i class="bi bi-lightning-charge"></i>
+                <h3>Aucune breaking news</h3>
+                <p>Utilisez le formulaire ci-dessus pour en créer une.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

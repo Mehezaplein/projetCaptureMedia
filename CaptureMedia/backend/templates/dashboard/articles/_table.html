@@ -1,0 +1,66 @@
+{% if page_obj.object_list %}
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Article</th>
+        <th>Catégorie</th>
+        <th>Auteur</th>
+        <th>Statut</th>
+        <th>Vues</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for article in page_obj %}
+      {% include 'dashboard/articles/_row.html' %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% if page_obj.has_previous %}
+  <a class="page-link"
+     hx-get="{% url 'dashboard:articles_list' %}?page={{ page_obj.previous_page_number }}&q={{ search }}&status={{ status_filter }}&category={{ category_filter }}"
+     hx-target="#articles-table"
+     hx-push-url="true">
+    <i class="bi bi-chevron-left"></i>
+  </a>
+  {% endif %}
+
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+      <span class="page-link active">{{ num }}</span>
+    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+      <a class="page-link"
+         hx-get="{% url 'dashboard:articles_list' %}?page={{ num }}&q={{ search }}&status={{ status_filter }}&category={{ category_filter }}"
+         hx-target="#articles-table"
+         hx-push-url="true">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+  <a class="page-link"
+     hx-get="{% url 'dashboard:articles_list' %}?page={{ page_obj.next_page_number }}&q={{ search }}&status={{ status_filter }}&category={{ category_filter }}"
+     hx-target="#articles-table"
+     hx-push-url="true">
+    <i class="bi bi-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-newspaper"></i>
+  <h3>Aucun article trouvé</h3>
+  <p>{% if search or status_filter or category_filter %}Aucun résultat pour vos filtres.{% else %}Commencez par créer votre premier article.{% endif %}</p>
+  <a href="{% url 'dashboard:article_add' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Nouvel article
+  </a>
+</div>
+{% endif %}

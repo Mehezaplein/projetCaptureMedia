@@ -1,0 +1,201 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Bibliothèque médias{% endblock %}
+{% block breadcrumb %}Bibliothèque médias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Bibliothèque médias</h1>
+    <p class="page-subtitle">{{ page_obj.paginator.count }} fichier{{ page_obj.paginator.count|pluralize }} au total</p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('media-upload').click()">
+    <i class="bi bi-cloud-arrow-up"></i> Uploader
+  </button>
+</div>
+
+<!-- Upload zone -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-body">
+    <div class="upload-zone" id="upload-zone"
+         ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+      <div style="text-align:center;padding:36px 20px;">
+        <i class="bi bi-cloud-arrow-up" style="font-size:48px;color:var(--cm-yellow);display:block;margin-bottom:12px;"></i>
+        <h3 style="margin-bottom:8px;">Glissez-déposez vos fichiers ici</h3>
+        <p class="text-muted">ou
+          <button type="button" onclick="document.getElementById('media-upload').click()"
+                  style="background:none;border:none;color:var(--cm-yellow);font-weight:700;cursor:pointer;text-decoration:underline;font-size:inherit;">
+            parcourez votre ordinateur
+          </button>
+        </p>
+        <p class="text-sm text-dim" style="margin-top:10px;">PNG, JPG, GIF, WebP, MP4, PDF — max 20Mo par fichier</p>
+      </div>
+      <!-- Upload progress -->
+      <div id="upload-progress" style="display:none;padding:0 20px 20px;">
+        <div style="background:var(--surface3);border-radius:4px;overflow:hidden;height:6px;">
+          <div id="upload-bar" style="height:100%;background:var(--cm-yellow);width:0;transition:width 0.3s;"></div>
+        </div>
+        <p class="text-sm text-muted" id="upload-status" style="margin-top:8px;text-align:center;"></p>
+      </div>
+    </div>
+    <input type="file" id="media-upload" style="display:none;" multiple
+           accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleMediaUpload(event)" />
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-row" style="margin-bottom:16px;">
+  <select class="filter-select"
+          hx-get="{% url 'dashboard:media_library' %}"
+          hx-trigger="change"
+          hx-target="#media-grid"
+          name="type">
+    <option value="" {% if not type_filter %}selected{% endif %}>Tous les types</option>
+    <option value="image" {% if type_filter == 'image' %}selected{% endif %}>Images</option>
+    <option value="video" {% if type_filter == 'video' %}selected{% endif %}>Vidéos</option>
+    <option value="document" {% if type_filter == 'document' %}selected{% endif %}>Documents</option>
+    <option value="audio" {% if type_filter == 'audio' %}selected{% endif %}>Audio</option>
+  </select>
+  <span class="text-dim text-sm" id="selected-info"></span>
+</div>
+
+<!-- Grid -->
+<div id="media-grid">
+  {% include 'dashboard/media/_grid.html' %}
+</div>
+
+<style>
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.upload-zone.dragover {
+  border-color: var(--cm-yellow);
+  background: var(--cm-yellow-soft);
+}
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+.media-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.media-item:hover {
+  border-color: var(--cm-yellow);
+  transform: translateY(-2px);
+}
+.media-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  background: var(--surface2);
+  display: block;
+}
+.media-thumb-placeholder {
+  width: 100%;
+  height: 120px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: var(--text3);
+}
+.media-actions {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.media-item:hover .media-actions { display: flex; }
+.media-info {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+.media-name {
+  font-size: 11px;
+  color: var(--text2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.media-size {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone').classList.add('dragover');
+  }
+  function handleDragLeave() {
+    document.getElementById('upload-zone').classList.remove('dragover');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone').classList.remove('dragover');
+    uploadFiles(e.dataTransfer.files);
+  }
+  function handleMediaUpload(e) {
+    uploadFiles(e.target.files);
+    e.target.value = '';
+  }
+
+  function uploadFiles(files) {
+    if (!files.length) return;
+    const formData = new FormData();
+    for (let f of files) formData.append('files', f);
+
+    const progress = document.getElementById('upload-progress');
+    const bar = document.getElementById('upload-bar');
+    const status = document.getElementById('upload-status');
+    progress.style.display = 'block';
+    status.textContent = `Envoi de ${files.length} fichier${files.length > 1 ? 's' : ''}…`;
+    bar.style.width = '30%';
+
+    fetch('{% url "dashboard:media_upload" %}', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': CSRF }
+    })
+    .then(r => {
+      bar.style.width = '100%';
+      if (!r.ok) throw new Error('Erreur ' + r.status);
+      return r.text();
+    })
+    .then(() => {
+      status.textContent = 'Upload terminé !';
+      setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0'; }, 1500);
+      // Refresh the grid
+      htmx.ajax('GET', '{% url "dashboard:media_library" %}', { target: '#media-grid', swap: 'innerHTML' });
+    })
+    .catch(err => {
+      status.textContent = 'Erreur : ' + err.message;
+      bar.style.background = '#e53e3e';
+    });
+  }
+
+  function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => showToast('URL copiée !'));
+  }
+</script>
+{% endblock %}

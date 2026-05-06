@@ -1,0 +1,33 @@
+<tr id="ad-{{ ad.id }}">
+  <td class="font-bold">{{ ad.title }}</td>
+  <td class="text-sm">
+    {% if ad.position == 'header' %}
+      Header
+    {% elif ad.position == 'sidebar' %}
+      Sidebar
+    {% elif ad.position == 'footer' %}
+      Footer
+    {% elif ad.position == 'inline' %}
+      Inline (articles)
+    {% endif %}
+  </td>
+  <td class="text-sm">
+    {{ ad.start_date|date:'d M Y' }} - {{ ad.end_date|date:'d M Y'|default:'-' }}
+  </td>
+  <td>
+    <label class="toggle-switch">
+      <input type="checkbox" {% if ad.is_active %}checked{% endif %} hx-post="{% url 'dashboard:ad_toggle' ad.id %}" hx-target="#ad-{{ ad.id }}" hx-swap="outerHTML swap:1s" />
+      <span class="toggle-slider"></span>
+    </label>
+  </td>
+  <td>
+    <div class="flex gap-8">
+      <a href="{% url 'dashboard:ad_edit' ad.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
+        <i class="bi bi-pencil"></i>
+      </a>
+      <button hx-delete="{% url 'dashboard:ad_delete' ad.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cette publicité ?" hx-target="#ad-{{ ad.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </td>
+</tr>

@@ -1,0 +1,71 @@
+<tr id="article-{{ article.pk }}">
+  <td style="max-width:280px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      {% if article.featured_image %}
+        <img src="{{ article.featured_image.url }}" class="img-preview" />
+      {% else %}
+        <div class="img-preview" style="background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text3);width:64px;height:48px;border-radius:6px;flex-shrink:0;">
+          <i class="bi bi-image"></i>
+        </div>
+      {% endif %}
+      <div style="min-width:0;">
+        <a href="{% url 'dashboard:article_edit' article.pk %}" style="font-weight:500;display:block;" class="truncate" title="{{ article.title }}">
+          {{ article.title|truncatechars:55 }}
+        </a>
+        <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;">
+          {% if article.is_featured %}<span class="badge badge-yellow"><i class="bi bi-star-fill"></i> Une</span>{% endif %}
+          {% if article.is_breaking %}<span class="badge" style="background:rgba(229,62,62,0.15);color:#e53e3e;"><i class="bi bi-lightning-charge-fill"></i> Breaking</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </td>
+  <td>
+    {% if article.category %}
+      <span style="font-size:13px;">{{ article.category.name }}</span>
+    {% else %}
+      <span class="text-dim">—</span>
+    {% endif %}
+  </td>
+  <td class="text-sm">{{ article.author.username|default:"—" }}</td>
+  <td>
+    {% if article.status == 'published' %}
+      <span class="badge badge-published">Publié</span>
+    {% elif article.status == 'draft' %}
+      <span class="badge badge-draft">Brouillon</span>
+    {% else %}
+      <span class="badge badge-archived">Archivé</span>
+    {% endif %}
+  </td>
+  <td class="text-sm text-muted">{{ article.views_count }}</td>
+  <td class="text-sm text-muted" style="white-space:nowrap;">{{ article.created_at|date:"d/m/Y" }}</td>
+  <td>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <!-- Toggle publish -->
+      <form hx-post="{% url 'dashboard:article_toggle' article.pk %}"
+            hx-target="#article-{{ article.pk }}"
+            hx-swap="outerHTML">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-icon btn-sm {% if article.status == 'published' %}btn-success{% else %}btn-ghost{% endif %}"
+                title="{% if article.status == 'published' %}Dépublier{% else %}Publier{% endif %}">
+          <i class="bi bi-{% if article.status == 'published' %}eye-fill{% else %}eye-slash{% endif %}"></i>
+        </button>
+      </form>
+
+      <!-- Edit -->
+      <a href="{% url 'dashboard:article_edit' article.pk %}" class="btn btn-icon btn-sm btn-ghost" title="Modifier">
+        <i class="bi bi-pencil"></i>
+      </a>
+
+      <!-- Delete -->
+      <form hx-post="{% url 'dashboard:article_delete' article.pk %}"
+            hx-target="#article-{{ article.pk }}"
+            hx-swap="outerHTML swap:0.3s"
+            hx-confirm="Supprimer « {{ article.title|truncatechars:30 }} » ? Cette action est irréversible.">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Supprimer">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </form>
+    </div>
+  </td>
+</tr>

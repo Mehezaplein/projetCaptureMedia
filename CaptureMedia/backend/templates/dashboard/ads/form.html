@@ -1,0 +1,85 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:ads_list' %}">Publicités</a> / {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:ads_list' %}" class="btn btn-ghost">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<div class="card" style="max-width:700px;">
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label">Titre <span class="required">*</span></label>
+        <input type="text" name="title" class="form-control" required
+               value="{{ ad.title|default:'' }}" placeholder="Nom interne de la publicité…" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">URL de destination <span class="required">*</span></label>
+        <input type="url" name="url" class="form-control" required
+               value="{{ ad.url|default:'' }}" placeholder="https://…" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Position d'affichage <span class="required">*</span></label>
+        <select name="position" class="form-select">
+          <option value="">— Choisir une position —</option>
+          {% for val, label in positions %}
+          <option value="{{ val }}" {% if ad.position == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Image de la publicité {% if not ad %}<span class="required">*</span>{% endif %}</label>
+        {% if ad.image %}
+        <div style="margin-bottom:10px;">
+          <img src="{{ ad.image.url }}" style="max-width:300px;border-radius:8px;border:2px solid var(--border);" />
+          <div class="form-hint">En uploadant une nouvelle image, l'ancienne sera remplacée.</div>
+        </div>
+        {% endif %}
+        <input type="file" name="image" class="form-control" accept="image/*"
+               {% if not ad %}required{% endif %} />
+        <div class="form-hint">Formats recommandés : JPG, PNG, WebP. Taille selon la position.</div>
+      </div>
+
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Date de début <span class="required">*</span></label>
+          <input type="date" name="start_date" class="form-control" required
+                 value="{{ ad.start_date|date:'Y-m-d'|default:'' }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de fin <span class="required">*</span></label>
+          <input type="date" name="end_date" class="form-control" required
+                 value="{{ ad.end_date|date:'Y-m-d'|default:'' }}" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-check">
+          <input type="checkbox" name="is_active" {% if not ad or ad.is_active %}checked{% endif %} />
+          <span class="form-check-label">Publicité active</span>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+        <a href="{% url 'dashboard:ads_list' %}" class="btn btn-ghost">Annuler</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          {% if ad %}Enregistrer{% else %}Créer la publicité{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
