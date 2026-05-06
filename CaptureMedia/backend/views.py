@@ -16,3 +16,5 @@ def Sign_upPage(request):
 
 def ContactPage(request):
     return render(request, "contact.html")
+def AddAnnoncePage(request):
+    return render(request, "add-annonce.html")

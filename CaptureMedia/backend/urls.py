@@ -6,4 +6,5 @@ urlpatterns = [
     path('login' , views.LoginPage , name="login"),
     path('signUp' , views.Sign_upPage , name="signUp"),
     path('contact' , views.ContactPage , name="contact"),
+    path('add-annonce', views.AddAnnoncePage, name="add-annonce"),
 ]
