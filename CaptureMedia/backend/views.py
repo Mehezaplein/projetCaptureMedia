@@ -18,3 +18,11 @@ def ContactPage(request):
     return render(request, "contact.html")
 def AddAnnoncePage(request):
     return render(request, "add-annonce.html")
+def AddAdminPage(request):
+    return render (request , "addAdmin.html")
+
+def ListeAdminPage(request):
+    return render (request , "listeAdmin.html")
+
+def EditAdminPage(request):
+    return render (request, "EditAdmin.html")
