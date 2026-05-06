@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 
 
 def IndexPage(request):
@@ -19,21 +19,3 @@ def ContactPage(request):
 
 def ForgotPage(request):
     return render(request, "forgot.html")
-
-
-# ── Anciennes pages admin → redirigées vers le dashboard ──────────────────────
-
-def AddAnnoncePage(request):
-    return redirect('/dashboard/articles/ajouter/')
-
-
-def AddAdminPage(request):
-    return redirect('/dashboard/utilisateurs/ajouter/')
-
-
-def ListeAdminPage(request):
-    return redirect('/dashboard/utilisateurs/')
-
-
-def EditAdminPage(request):
-    return redirect('/dashboard/utilisateurs/')

@@ -911,19 +911,31 @@ def settings_view(request):
 @login_required
 def profile_view(request):
     if request.method == 'POST':
-        request.user.first_name = request.POST.get('first_name', '').strip()
-        request.user.last_name = request.POST.get('last_name', '').strip()
-        request.user.email = request.POST.get('email', '').strip()
-        new_password = request.POST.get('new_password', '').strip()
-        if new_password:
-            current_password = request.POST.get('current_password', '')
-            if request.user.check_password(current_password):
-                request.user.set_password(new_password)
-                messages.success(request, 'Mot de passe mis à jour.')
-            else:
+        if request.POST.get('change_password'):
+            # Formulaire changement mot de passe
+            current = request.POST.get('current_password', '')
+            new_pwd = request.POST.get('new_password', '').strip()
+            confirm = request.POST.get('confirm_password', '').strip()
+            if not request.user.check_password(current):
                 messages.error(request, 'Mot de passe actuel incorrect.')
-        request.user.save()
-        messages.success(request, 'Profil mis à jour.')
+            elif not new_pwd:
+                messages.error(request, 'Le nouveau mot de passe ne peut pas être vide.')
+            elif new_pwd != confirm:
+                messages.error(request, 'Les deux mots de passe ne correspondent pas.')
+            else:
+                request.user.set_password(new_pwd)
+                request.user.save()
+                # Reconnexion nécessaire après changement de mot de passe
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, request.user)
+                messages.success(request, 'Mot de passe mis à jour avec succès.')
+        else:
+            # Formulaire informations personnelles
+            request.user.first_name = request.POST.get('first_name', '').strip()
+            request.user.last_name = request.POST.get('last_name', '').strip()
+            request.user.email = request.POST.get('email', '').strip()
+            request.user.save()
+            messages.success(request, 'Profil mis à jour.')
         return redirect('dashboard:profile')
 
     return render(request, 'dashboard/profile.html', {
