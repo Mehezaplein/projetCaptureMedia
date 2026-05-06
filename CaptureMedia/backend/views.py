@@ -13,3 +13,12 @@ def LoginPage(request):
 
 def Sign_upPage(request):
     return render (request ,"sign-up.html")
+
+def AddAdminPage(request):
+    return render (request , "addAdmin.html")
+
+def ListeAdminPage(request):
+    return render (request , "listeAdmin.html")
+
+def EditAdminPage(request):
+    return render (request, "EditAdmin.html")
