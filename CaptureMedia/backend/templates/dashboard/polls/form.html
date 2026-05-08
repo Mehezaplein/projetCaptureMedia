@@ -58,27 +58,21 @@
         <label class="form-label">
           Question <span class="required">*</span>
         </label>
-        {{ form.question }}
-        {% if form.question.errors %}
-          <div class="text-danger text-sm">{{ form.question.errors.0 }}</div>
-        {% endif %}
+        <input type="text" class="form-control" name="question" value="{{ poll.question }}" placeholder="Votre question..." required>
       </div>
 
       <div class="form-group">
         <label class="form-label">Description</label>
-        {{ form.description }}
-        {% if form.description.errors %}
-          <div class="text-danger text-sm">{{ form.description.errors.0 }}</div>
-        {% endif %}
+        <textarea class="form-control" name="description" rows="3" placeholder="Description optionnelle...">{{ poll.description }}</textarea>
       </div>
 
       <div class="form-group">
         <label class="form-label">Options de réponse</label>
         <div class="choices-list" id="choices-list">
-          {% if formset %}
-            {% for choice_form in formset %}
+          {% if poll.choices.all %}
+            {% for choice in poll.choices.all %}
               <div class="choice-item" id="choice-{{ forloop.counter0 }}">
-                {{ choice_form.text }}
+                <input type="text" class="form-control" name="choices" value="{{ choice.text }}" placeholder="Option {{ forloop.counter }}" />
                 <button type="button" class="choice-remove-btn" onclick="removeChoice({{ forloop.counter0 }})">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -86,13 +80,13 @@
             {% endfor %}
           {% else %}
             <div class="choice-item" id="choice-0">
-              <input type="text" class="form-control" placeholder="Option 1" />
+              <input type="text" class="form-control" name="choices" placeholder="Option 1" />
               <button type="button" class="choice-remove-btn" onclick="removeChoice(0)">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
             <div class="choice-item" id="choice-1">
-              <input type="text" class="form-control" placeholder="Option 2" />
+              <input type="text" class="form-control" name="choices" placeholder="Option 2" />
               <button type="button" class="choice-remove-btn" onclick="removeChoice(1)">
                 <i class="bi bi-trash"></i>
               </button>
@@ -107,14 +101,14 @@
 
       <div class="form-group">
         <label class="form-check">
-          {{ form.allow_multiple }}
+          <input type="checkbox" name="allow_multiple" {% if poll.allow_multiple %}checked{% endif %}>
           <span>Autoriser les réponses multiples</span>
         </label>
       </div>
 
       <div class="form-group">
         <label class="form-check">
-          {{ form.is_active }}
+          <input type="checkbox" name="is_active" {% if poll.is_active or not poll %}checked{% endif %}>
           <span>Activer ce sondage</span>
         </label>
       </div>
@@ -141,7 +135,7 @@
     item.className = 'choice-item';
     item.id = 'choice-' + choiceCount;
     item.innerHTML = `
-      <input type="text" class="form-control" placeholder="Option ${choiceCount + 1}" />
+      <input type="text" class="form-control" name="choices" placeholder="Option ${choiceCount + 1}" />
       <button type="button" class="choice-remove-btn" onclick="removeChoice(${choiceCount})">
         <i class="bi bi-trash"></i>
       </button>
