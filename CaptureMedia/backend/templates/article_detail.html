@@ -1,135 +1,171 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static media_tags %}
 
-{% block title %}{{ article.title }} - {{ site_settings.site_name }}{% endblock %}
+{% block title %}{{ article.title }} — {{ site_settings.site_name }}{% endblock %}
 
 {% block content %}
 <main>
-    <section class="rs-blog-details-area pt-30 pb-40">
-        <div class="container">
-            <div class="row g-4">
-                <!-- Left: Article Content -->
-                <div class="col-lg-8">
-                    <div class="blog-details-wrapper">
-                        {% if article.category and article.category.slug %}
-                        <div class="rs-post-tag mb-3">
-                            <a href="{% url 'category_articles' article.category.slug %}" class="post-tag">{{ article.category.name }}</a>
-                        </div>
-                        {% endif %}
-                        <h1 class="rs-post-details-title mb-20" style="font-size: 2.5rem; line-height: 1.1; font-weight: 800;">
-                            {{ article.title }}
-                        </h1>
-                        <div class="rs-post-meta mb-30 border-bottom pb-3">
-                            <ul class="d-flex list-unstyled small text-muted">
-                                <li class="me-4"><span><i class="ri-user-line"></i> Par {{ article.author.username }}</span></li>
-                                <li class="me-4"><span><i class="ri-calendar-line"></i> {{ article.published_at|date:"d M, Y" }}</span></li>
-                                <li><span><i class="ri-eye-line"></i> {{ article.views_count }} vues</span></li>
-                            </ul>
-                        </div>
 
-                        <div class="blog-details-thumb mb-40">
-                            <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="img-fluid rounded w-100" style="max-height: 500px; object-fit: cover;">
-                        </div>
+  <!-- Hero image -->
+  {% if article.featured_image %}
+  <div class="cm-article-hero">
+    <img src="{{ article.featured_image.url }}" alt="{{ article.title }}">
+    <div class="cm-article-hero-overlay"></div>
+    <div class="cm-article-hero-content">
+      {% if article.category and article.category.slug %}
+      <a href="{% url 'category_articles' article.category.slug %}" class="cat-tag">{{ article.category.name }}</a>
+      {% endif %}
+      <h1 class="cm-article-hero-title">{{ article.title }}</h1>
+    </div>
+  </div>
+  {% endif %}
 
-                        <div class="blog-details-content rs-content">
-                            {{ article.content|safe }}
-                        </div>
+  <div class="cm-article-body-wrap">
+    <div class="cm-container">
+      <div class="cm-two-col">
 
-                        <!-- Related Articles (Density) -->
-                        <div class="related-articles-section mt-60">
-                            <div class="section-title mb-30 border-bottom pb-2">
-                                <h4 class="title">À LIRE AUSSI</h4>
-                            </div>
-                            <div class="row g-3">
-                                {% for related in global_suggestions|slice:":3" %}
-                                <div class="col-md-4">
-                                    <div class="rs-post-card">
-                                        <div class="thumb mb-2">
-                                            <a href="{% url 'article_detail' related.slug %}">
-                                                <img src="{{ related.featured_image.url }}" class="rounded w-100" style="height: 120px; object-fit: cover;">
-                                            </a>
-                                        </div>
-                                        <h6 style="font-size: 14px; line-height: 1.3;">
-                                            <a href="{% url 'article_detail' related.slug %}" class="text-dark fw-bold">{{ related.title|truncatewords:8 }}</a>
-                                        </h6>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
+        <!-- Article content -->
+        <article>
+          {% if not article.featured_image %}
+          {% if article.category and article.category.slug %}
+          <a href="{% url 'category_articles' article.category.slug %}" class="cat-tag" style="display:inline-block;margin-bottom:14px;">{{ article.category.name }}</a>
+          {% endif %}
+          <h1 style="font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;line-height:1.1;margin-bottom:20px;">
+            {{ article.title }}
+          </h1>
+          {% endif %}
 
-                        <!-- Comments Section -->
-                        <div class="comments-area mt-60">
-                            <div class="section-title mb-30 border-bottom pb-2">
-                                <h4 class="title">Commentaires ({{ comments.count }})</h4>
-                            </div>
-                            {% for comment in comments %}
-                            <div class="comment-item mb-20 p-3 bg-light rounded">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <h6 class="mb-0">{{ comment.author_name }}</h6>
-                                    <small class="text-muted">{{ comment.created_at|date:"d M, Y" }}</small>
-                                </div>
-                                <p class="mb-0 small">{{ comment.content }}</p>
-                            </div>
-                            {% endfor %}
+          <div class="cm-article-meta">
+            {% if article.author %}
+            <span>Par <strong>{{ article.author.get_full_name|default:article.author.username }}</strong></span>
+            {% endif %}
+            <span>{{ article.published_at|date:"d M Y" }}</span>
+            <span><i class="ri-eye-line"></i> {{ article.views_count }} vues</span>
+            {% if article.comments_count %}
+            <span><i class="ri-chat-1-line"></i> {{ article.comments_count }} commentaires</span>
+            {% endif %}
+          </div>
 
-                            <div class="comment-form mt-40">
-                                <h5 class="mb-20">Laisser un commentaire</h5>
-                                <form action="{% url 'add_comment' article.slug %}" method="post" class="row g-3">
-                                    {% csrf_token %}
-                                    <div class="col-md-6">
-                                        <input type="text" name="name" class="form-control" placeholder="Nom *" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="email" name="email" class="form-control" placeholder="Email *" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <textarea name="content" class="form-control" rows="4" placeholder="Votre message *" required></textarea>
-                                    </div>
-                                    <div class="col-12">
-                                        <button type="submit" class="rs-btn btn-brand">Envoyer</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          {% if article.excerpt %}
+          <p style="font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;color:#555;line-height:1.7;margin-bottom:28px;border-left:4px solid #FFCC00;padding-left:20px;">
+            {{ article.excerpt }}
+          </p>
+          {% endif %}
 
-                <!-- Right: Sidebar (Dense) -->
-                <div class="col-lg-4">
-                    <div class="sidebar-sticky" style="position: sticky; top: 100px;">
-                        <!-- Most Read -->
-                        <div class="sidebar-widget mb-40">
-                            <div class="section-title mb-20 border-bottom">
-                                <h5 class="title">DANS LA MÊME CATÉGORIE</h5>
-                            </div>
-                            {% for sug in global_suggestions %}
-                            <div class="d-flex mb-3 align-items-start border-bottom pb-2">
-                                <div class="count fw-bold text-brand me-3" style="font-size: 18px;">0{{ forloop.counter }}</div>
-                                <h6 style="font-size: 13px; line-height: 1.4;">
-                                    <a href="{% url 'article_detail' sug.slug %}" class="text-dark">{{ sug.title }}</a>
-                                </h6>
-                            </div>
-                            {% endfor %}
-                        </div>
+          <!-- External media embed -->
+          {% embed_media article %}
 
-                        <!-- Newsletter -->
-                        <div class="sidebar-widget mb-40 brand-bg p-4 rounded text-center">
-                            <h5 class="mb-2">Newsletter</h5>
-                            <p class="small mb-3">Recevez nos prochaines enquêtes.</p>
-                            <form action="{% url 'newsletter_signup' %}" method="post">
-                                {% csrf_token %}
-                                <input type="email" name="email" class="form-control mb-2" placeholder="Votre email" required>
-                                <button type="submit" class="rs-btn btn-dark w-100">S'abonner</button>
-                            </form>
-                        </div>
+          <div class="cm-article-content">
+            {{ article.content|safe }}
+          </div>
 
-                        <!-- Poll Slider -->
-                        {% include 'partials/sidebar_polls.html' %}
-                    </div>
-                </div>
+          <!-- Tags -->
+          {% if article.tags.exists %}
+          <div class="cm-article-tags">
+            {% for tag in article.tags.all %}
+            <span class="cm-article-tag"># {{ tag.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Related articles -->
+          <div style="margin-top:52px;">
+            <div class="cm-section-label accent">
+              <h4>À lire aussi</h4>
             </div>
-        </div>
-    </section>
+            <div class="cm-related-grid">
+              {% for related in global_suggestions|slice:":3" %}
+              {% if related.featured_image %}
+              <a href="{% url 'article_detail' related.slug %}" class="cm-article-card" style="text-decoration:none;">
+                <div class="cm-article-card-thumb">
+                  <img src="{{ related.featured_image.url }}" alt="{{ related.title }}">
+                </div>
+                <div class="cm-article-card-body">
+                  <span class="cm-article-card-title">{{ related.title|truncatewords:8 }}</span>
+                  <div class="cm-article-card-meta">{{ related.published_at|date:"d M Y" }}</div>
+                </div>
+              </a>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Comments -->
+          {% if article.allow_comments %}
+          <div class="cm-comments-section">
+            <div class="cm-section-label accent">
+              <h4>Commentaires ({{ comments.count }})</h4>
+            </div>
+
+            {% for comment in comments %}
+            <div class="cm-comment">
+              <div class="cm-comment-header">
+                <span class="cm-comment-author">{{ comment.author_name }}</span>
+                <span class="cm-comment-date">{{ comment.created_at|date:"d M Y" }}</span>
+              </div>
+              <p class="cm-comment-content">{{ comment.content }}</p>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-size:.9rem;padding:20px 0;">Soyez le premier à commenter.</p>
+            {% endfor %}
+
+            <div class="cm-comment-form">
+              <h4>Laisser un commentaire</h4>
+              <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px;">
+                Votre commentaire sera visible après modération.
+              </p>
+              <form action="{% url 'add_comment' article.slug %}" method="post">
+                {% csrf_token %}
+                <div class="cm-form-grid">
+                  <div>
+                    <label class="cm-form-label">Nom *</label>
+                    <input type="text" name="name" class="cm-form-input" placeholder="Votre nom" required>
+                  </div>
+                  <div>
+                    <label class="cm-form-label">Email *</label>
+                    <input type="email" name="email" class="cm-form-input" placeholder="votre@email.com" required>
+                  </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                  <label class="cm-form-label">Message *</label>
+                  <textarea name="content" class="cm-form-input" rows="4" placeholder="Votre commentaire…" required></textarea>
+                </div>
+                <button type="submit" class="cm-btn accent">Envoyer le commentaire</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </article>
+
+        <!-- Sidebar -->
+        <aside class="cm-sidebar">
+          <div class="cm-widget">
+            <div class="cm-section-label accent">
+              <h5>Dans la même catégorie</h5>
+            </div>
+            {% for sug in global_suggestions %}
+            <a href="{% url 'article_detail' sug.slug %}" class="cm-most-read-item" style="text-decoration:none;">
+              <span class="cm-most-read-num">0{{ forloop.counter }}</span>
+              <span class="cm-most-read-title">{{ sug.title|truncatewords:10 }}</span>
+            </a>
+            {% endfor %}
+          </div>
+
+          <div class="cm-newsletter-widget">
+            <h4>Newsletter</h4>
+            <p>Recevez nos prochains articles directement dans votre boîte mail.</p>
+            <form action="{% url 'newsletter_signup' %}" method="post">
+              {% csrf_token %}
+              <input type="email" name="email" placeholder="votre@email.com" required>
+              <button type="submit">S'abonner →</button>
+            </form>
+          </div>
+
+          {% include 'partials/sidebar_polls.html' %}
+        </aside>
+
+      </div>
+    </div>
+  </div>
 </main>
 {% endblock %}

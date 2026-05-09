@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Filter \"*.py\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Nouveau dossier\\\\Projet\\\\Funny_tps\\\\projetCaptureMedia\\\\CaptureMedia\\\\docs\\\\superpowers\\\\specs\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Nouveau dossier\\\\Projet\\\\Funny_tps\\\\projetCaptureMedia\\\\CaptureMedia\" -Recurse -Include \"*.html\",\"*.py\",\"*.css\",\"*.js\")",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Nouveau dossier\\\\Projet\\\\Funny_tps\\\\projetCaptureMedia\\\\CaptureMedia\\\\static\" -Recurse -File)",
+      "Bash(Select-Object -First 50)"
+    ]
+  }
+}

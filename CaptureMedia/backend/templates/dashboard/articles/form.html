@@ -135,6 +135,28 @@
         </div>
       </div>
 
+      <!-- Média externe -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><span class="card-title">Média externe</span></div>
+        <div class="card-body">
+          <div class="form-group" style="margin-bottom:10px;">
+            <input type="url" name="media_url" id="mediaUrlInput" class="form-control"
+                   placeholder="Coller un lien YouTube, TikTok, Instagram…"
+                   value="{{ article.media_url|default:'' }}"
+                   oninput="updateMediaPreview(this.value)" />
+          </div>
+          <div id="mediaPreview" style="display:none;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px;">
+            <i id="mediaPlatformIcon" style="font-size:24px;"></i>
+            <div>
+              <div id="mediaPlatformLabel" style="font-weight:600;font-size:13px;"></div>
+              <div class="text-dim text-sm">Lien détecté</div>
+            </div>
+            <button type="button" onclick="clearMediaUrl()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;" title="Effacer">×</button>
+          </div>
+          <div class="form-hint">Remplace l'upload lourd — la vidéo sera intégrée dans l'article.</div>
+        </div>
+      </div>
+
       <!-- Tags -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-header"><span class="card-title">Tags</span></div>
@@ -231,5 +253,45 @@
   function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
   renderTags();
+
+  // Media URL preview
+  const PLATFORMS = [
+    { pattern: /youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts/i, key: 'youtube',   icon: 'bi-youtube',      color: '#FF0000', label: 'YouTube' },
+    { pattern: /tiktok\.com/i,                                           key: 'tiktok',    icon: 'bi-tiktok',       color: '#010101', label: 'TikTok' },
+    { pattern: /instagram\.com/i,                                        key: 'instagram', icon: 'bi-instagram',    color: '#E1306C', label: 'Instagram' },
+    { pattern: /twitter\.com|x\.com/i,                                   key: 'twitter',   icon: 'bi-twitter-x',   color: '#000000', label: 'Twitter / X' },
+    { pattern: /facebook\.com/i,                                         key: 'facebook',  icon: 'bi-facebook',     color: '#1877F2', label: 'Facebook' },
+    { pattern: /wa\.me|whatsapp\.com/i,                                  key: 'whatsapp',  icon: 'bi-whatsapp',     color: '#25D366', label: 'WhatsApp' },
+  ];
+
+  function detectPlatform(url) {
+    for (const p of PLATFORMS) {
+      if (p.pattern.test(url)) return p;
+    }
+    return url ? { icon: 'bi-link-45deg', color: '#6c757d', label: 'Lien externe' } : null;
+  }
+
+  function updateMediaPreview(url) {
+    const preview = document.getElementById('mediaPreview');
+    const icon = document.getElementById('mediaPlatformIcon');
+    const lbl = document.getElementById('mediaPlatformLabel');
+    const platform = detectPlatform(url.trim());
+    if (platform) {
+      icon.className = 'bi ' + platform.icon;
+      icon.style.color = platform.color;
+      lbl.textContent = platform.label;
+      preview.style.display = 'flex';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  function clearMediaUrl() {
+    document.getElementById('mediaUrlInput').value = '';
+    document.getElementById('mediaPreview').style.display = 'none';
+  }
+
+  // Init preview if editing an existing article
+  updateMediaPreview(document.getElementById('mediaUrlInput').value);
 </script>
 {% endblock %}

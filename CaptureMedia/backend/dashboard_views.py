@@ -150,6 +150,7 @@ def article_add(request):
             )
             if 'featured_image' in request.FILES:
                 article.featured_image = request.FILES['featured_image']
+            article.media_url = request.POST.get('media_url', '').strip() or None
             article.save()
 
             # Tags
@@ -187,7 +188,7 @@ def article_edit(request, pk):
 
         if 'featured_image' in request.FILES:
             article.featured_image = request.FILES['featured_image']
-
+        article.media_url = request.POST.get('media_url', '').strip() or None
         article.save()
 
         # Tags

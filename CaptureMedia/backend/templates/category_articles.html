@@ -1,80 +1,93 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ category.name }} - {{ site_settings.site_name }}{% endblock %}
+{% block title %}{{ category.name }} — {{ site_settings.site_name }}{% endblock %}
 
 {% block content %}
 <main>
-    <section class="rs-blog-area pt-30 pb-80">
-        <div class="container">
-            <div class="row g-4">
-                <!-- Left: Category News Feed -->
-                <div class="col-lg-8">
-                    <div class="section-title mb-25 border-bottom pb-2">
-                        <h2 class="title">{{ category.name }}</h2>
-                        <p class="text-muted small">Tous les articles dans la catégorie {{ category.name }}</p>
-                    </div>
-                    <div class="latest-news">
-                        {% for article in articles %}
-                        <div class="rs-post-list-item d-flex mb-20 pb-20 border-bottom">
-                            <div class="rs-post-list-thumb me-3" style="width: 200px; flex-shrink: 0;">
-                                <a href="{% url 'article_detail' article.slug %}">
-                                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded" style="height: 130px; width: 100%; object-fit: cover;">
-                                </a>
-                            </div>
-                            <div class="rs-post-list-content">
-                                <h4 class="mb-2" style="font-size: 1.2rem;">
-                                    <a href="{% url 'article_detail' article.slug %}" class="text-dark fw-bold">{{ article.title }}</a>
-                                </h4>
-                                <p class="small text-muted mb-2">{{ article.content|striptags|truncatewords:20 }}</p>
-                                <div class="rs-post-meta small text-muted">
-                                    <span><i class="ri-calendar-line"></i> {{ article.published_at|date:"d M, Y" }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="text-center py-5">
-                            <p class="lead">Aucun article dans cette catégorie.</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
 
-                <!-- Right: Sidebar (Dense) -->
-                <div class="col-lg-4">
-                    <div class="sidebar-sticky" style="position: sticky; top: 100px;">
-                        <!-- Most Read -->
-                        <div class="sidebar-widget mb-40">
-                            <div class="section-title mb-20 border-bottom">
-                                <h5 class="title">LES PLUS LUS</h5>
-                            </div>
-                            {% for sug in global_suggestions %}
-                            <div class="d-flex mb-3 align-items-start border-bottom pb-2">
-                                <div class="count fw-bold text-brand me-3" style="font-size: 18px;">0{{ forloop.counter }}</div>
-                                <h6 style="font-size: 13px; line-height: 1.4;">
-                                    <a href="{% url 'article_detail' sug.slug %}" class="text-dark">{{ sug.title }}</a>
-                                </h6>
-                            </div>
-                            {% endfor %}
-                        </div>
+  <!-- Category header -->
+  <div class="cm-category-header">
+    <div class="cm-container">
+      <div class="label" style="color:var(--accent);margin-bottom:10px;">Catégorie</div>
+      <h1>{{ category.name }}</h1>
+      {% if category.description %}
+      <p style="color:rgba(255,255,255,.6);font-size:.95rem;margin-top:12px;max-width:600px;">{{ category.description }}</p>
+      {% endif %}
+      <div class="cm-category-count">{{ articles|length }} article{{ articles|length|pluralize }}</div>
+    </div>
+  </div>
 
-                        <!-- Newsletter -->
-                        <div class="sidebar-widget mb-40 brand-bg p-4 rounded text-center">
-                            <h5 class="mb-2">Newsletter</h5>
-                            <p class="small mb-3">Ne manquez aucune info de la catégorie {{ category.name }}.</p>
-                            <form action="{% url 'newsletter_signup' %}" method="post">
-                                {% csrf_token %}
-                                <input type="email" name="email" class="form-control mb-2" placeholder="Votre email" required>
-                                <button type="submit" class="rs-btn btn-dark w-100">S'abonner</button>
-                            </form>
-                        </div>
+  <section style="padding:48px 0 60px;">
+    <div class="cm-container">
+      <div class="cm-two-col">
 
-                        <!-- Poll Slider -->
-                        {% include 'partials/sidebar_polls.html' %}
-                    </div>
-                </div>
+        <!-- Articles -->
+        <div>
+          {% for article in articles %}
+          {% if article.featured_image %}
+          <a href="{% url 'article_detail' article.slug %}" class="cm-article-row" style="display:flex;text-decoration:none;">
+            <div class="cm-article-row-thumb">
+              <img src="{{ article.featured_image.url }}" alt="{{ article.title }}">
             </div>
+            <div class="cm-article-row-body">
+              <span class="cat-tag">{{ category.name }}</span>
+              <span class="cm-article-row-title">{{ article.title }}</span>
+              <span class="cm-article-row-excerpt">{{ article.content|striptags|truncatewords:22 }}</span>
+              <div class="cm-article-row-meta">
+                <span>{{ article.published_at|date:"d M Y" }}</span>
+                <span>{{ article.views_count }} vues</span>
+              </div>
+            </div>
+          </a>
+          {% else %}
+          <a href="{% url 'article_detail' article.slug %}" class="cm-article-row" style="display:flex;text-decoration:none;">
+            <div class="cm-article-row-body" style="width:100%;">
+              <span class="cat-tag">{{ category.name }}</span>
+              <span class="cm-article-row-title">{{ article.title }}</span>
+              <span class="cm-article-row-excerpt">{{ article.content|striptags|truncatewords:22 }}</span>
+              <div class="cm-article-row-meta">
+                <span>{{ article.published_at|date:"d M Y" }}</span>
+              </div>
+            </div>
+          </a>
+          {% endif %}
+          {% empty %}
+          <div class="cm-empty">
+            <h3>Aucun article</h3>
+            <p>Aucun article n'a encore été publié dans cette catégorie.</p>
+            <a href="{% url 'index' %}" class="cm-btn" style="margin-top:20px;display:inline-flex;">← Retour à l'accueil</a>
+          </div>
+          {% endfor %}
         </div>
-    </section>
+
+        <!-- Sidebar -->
+        <aside class="cm-sidebar">
+          <div class="cm-widget">
+            <div class="cm-section-label accent"><h5>Les plus lus</h5></div>
+            {% for sug in global_suggestions %}
+            <a href="{% url 'article_detail' sug.slug %}" class="cm-most-read-item" style="text-decoration:none;">
+              <span class="cm-most-read-num">0{{ forloop.counter }}</span>
+              <span class="cm-most-read-title">{{ sug.title|truncatewords:10 }}</span>
+            </a>
+            {% endfor %}
+          </div>
+
+          <div class="cm-newsletter-widget">
+            <h4>Newsletter</h4>
+            <p>Ne manquez aucune info de la rubrique {{ category.name }}.</p>
+            <form action="{% url 'newsletter_signup' %}" method="post">
+              {% csrf_token %}
+              <input type="email" name="email" placeholder="votre@email.com" required>
+              <button type="submit">S'abonner →</button>
+            </form>
+          </div>
+
+          {% include 'partials/sidebar_polls.html' %}
+        </aside>
+
+      </div>
+    </div>
+  </section>
 </main>
 {% endblock %}

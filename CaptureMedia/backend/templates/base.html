@@ -1,95 +1,98 @@
 <!doctype html>
-<html class="no-js" lang="zxx">
-
+<html lang="fr">
 {% load static %}
-<!-- Mirrored from demo.rstheme.com/html/nerio/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 29 Apr 2026 13:44:46 GMT -->
-
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <meta name="template-version" content="1.0.3">
-    <title>{% block title %}{{ site_settings.site_name|default:"CaptureMedia" }}{% endblock %}</title>
-    <meta name="description" content="{{ site_settings.meta_description }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicon -->
-    {% if site_settings.favicon %}
-    <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
-    {% elif site_settings.logo %}
-    <link rel="shortcut icon" type="image/x-icon" href="{{ site_settings.logo.url }}">
-    {% else %}
-    <link rel="shortcut icon" type="image/x-icon" href="{% static 'assets/images/favicon.png' %}">
-    {% endif %}
-    <!-- CSS here -->
-    <link rel="stylesheet" href=" {% static 'assets/css/vendor/bootstrap.min.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/vendor/animate.min.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/plugins/swiper.min.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/vendor/magnific-popup.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/vendor/spacing.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/vendor/remixicon.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/main.css' %} ">
-    <link rel="stylesheet" href=" {% static 'assets/css/brand.css' %} ">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_settings.site_name|default:"CaptureMedia" }}{% endblock %}</title>
+  <meta name="description" content="{{ site_settings.site_description|default:"CaptureMedia - votre source d'information fiable." }}">
+
+  {% if site_settings.favicon %}
+  <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+  {% elif site_settings.logo %}
+  <link rel="shortcut icon" href="{{ site_settings.logo.url }}">
+  {% else %}
+  <link rel="shortcut icon" href="{% static 'assets/images/favicon.png' %}">
+  {% endif %}
+
+  <!-- Fonts via Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Bootstrap grid only -->
+  <link rel="stylesheet" href="{% static 'assets/css/vendor/bootstrap.min.css' %}">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- RemixIcon -->
+  <link rel="stylesheet" href="{% static 'assets/css/vendor/remixicon.css' %}">
+  <!-- Theme -->
+  <link rel="stylesheet" href="{% static 'assets/css/capturemedia-theme.css' %}">
+
+  {% block extra_head %}{% endblock %}
 </head>
+<body>
 
-<body class="rs-smoother-yes">
+{% include 'partials/header.html' %}
 
-    <!-- preloader start -->
-    <!-- <div id="pre-load">
-        <div id="loader" class="loader">
-            <div class="loader-container">
-                <div class="loader-icon"><img src=" {% static 'assets/images/favicon.png' %} " alt=""></div>
-            </div>
-        </div>
-    </div> -->
-    <!-- preloader end -->
+{% if messages %}
+<div class="cm-container" style="padding-top:16px;">
+  {% for message in messages %}
+  <div class="cm-alert {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% endif %}">
+    <span>{{ message }}</span>
+    <button class="cm-alert-close" onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 
-    <!-- mouse start -->
-    <div id="rs-mouse">
-        <div id="cursor-ball"></div>
-    </div>
-    <!-- mouse end -->
+{% block content %}{% endblock %}
 
-    {% include 'partials/header.html' %}
+{% include 'partials/footer.html' %}
 
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    </div>
+<!-- Mobile nav overlay -->
+<nav class="cm-mobile-nav" id="mobileNav">
+  <div class="cm-mobile-nav-header">
+    <span style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#fff;">
+      Capture<span style="color:#FFCC00;">Media</span>
+    </span>
+    <button class="cm-mobile-nav-close" onclick="closeMobileNav()">×</button>
+  </div>
+  <a href="{% url 'index' %}">Accueil</a>
+  {% for cat in global_categories %}
+    {% if not cat.parent and cat.slug %}
+    <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
     {% endif %}
+  {% endfor %}
+  <a href="{% url 'mediatheque' %}">Médiathèque</a>
+  <a href="{% url 'contact' %}">Contact</a>
+  <a href="{% url 'login' %}" style="color:#FFCC00;margin-top:20px;">Connexion →</a>
+</nav>
 
-    {% block content %}
-    {% endblock %}
-    {% include 'partials/footer.html' %}
-    <!-- JS communs ici -->
-    <!-- back to top -->
-    <!-- Backtotop start -->
-    <div class="backtotop-wrap cursor-pointer">
-        <i class="ri-arrow-up-s-line"></i>
-    </div>
-    <!-- Backtotop end -->
+<!-- Back to top -->
+<button class="cm-backtop" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="ri-arrow-up-line"></i>
+</button>
 
-    <!-- JS here -->
-    <script src=" {% static 'assets/js/vendor/jquery-3.7.1.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/bootstrap.bundle.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/meanmenu.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/swiper.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/wow.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/magnific-popup.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/isotope.pkgd.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/imagesloaded.pkgd.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/ajax-form.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/lenis.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/gsap.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/rs-anim-int.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/rs-scroll-trigger.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/rs-splitText.min.js' %} "></script>
-    <script src=" {% static 'assets/js/plugins/jquery.appear.min.js' %} "></script>
-    <script src=" {% static 'assets/js/vendor/dark-light.js' %} "></script>
-    <script src=" {% static 'assets/js/main.js' %} "></script>
+<!-- Bootstrap JS -->
+<script src="{% static 'assets/js/vendor/jquery-3.7.1.min.js' %}"></script>
+<script src="{% static 'assets/js/vendor/bootstrap.bundle.min.js' %}"></script>
+
+<script>
+  // Mobile nav
+  function openMobileNav()  { document.getElementById('mobileNav').classList.add('open'); }
+  function closeMobileNav() { document.getElementById('mobileNav').classList.remove('open'); }
+
+  // Back to top
+  const backTop = document.getElementById('backTop');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('visible', window.scrollY > 300);
+  });
+
+  // Year in footer
+  const yr = document.getElementById('footer-year');
+  if (yr) yr.textContent = new Date().getFullYear();
+</script>
+
+{% block extra_js %}{% endblock %}
 </body>
-
 </html>

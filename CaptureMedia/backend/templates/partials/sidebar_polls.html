@@ -1,27 +1,19 @@
 {% if global_active_poll %}
-<div class="sidebar-widget mb-40 p-3 border rounded shadow-sm bg-white">
-    <div class="section-title mb-20 border-bottom">
-        <h5 class="title" style="font-size: 16px;">VOTRE AVIS</h5>
-    </div>
-    <div class="poll-content">
-        <h6 class="mb-3" style="font-size: 14px;">{{ global_active_poll.question }}</h6>
-        <form action="{% url 'poll_vote' global_active_poll.id %}" method="post">
-            {% csrf_token %}
-            <div class="poll-choices mb-3">
-                {% for choice in global_active_poll.choices.all %}
-                <div class="form-check mb-2 small">
-                    <input class="form-check-input" type="radio" name="choice" value="{{ choice.id }}" id="poll-{{ global_active_poll.id }}-choice-{{ choice.id }}" required>
-                    <label class="form-check-label" for="poll-{{ global_active_poll.id }}-choice-{{ choice.id }}">
-                        {{ choice.text }}
-                    </label>
-                </div>
-                {% endfor %}
-            </div>
-            <button type="submit" class="rs-btn btn-brand btn-sm w-100">Voter</button>
-            <div class="mt-2 text-center">
-                <small class="text-muted">{{ global_active_poll.total_votes }} votes au total</small>
-            </div>
-        </form>
-    </div>
+<div class="cm-poll-widget">
+  <h5>Sondage du jour</h5>
+  <p class="cm-poll-question">{{ global_active_poll.question }}</p>
+  <form action="{% url 'poll_vote' global_active_poll.id %}" method="post">
+    {% csrf_token %}
+    {% for choice in global_active_poll.choices.all %}
+    <label class="cm-poll-choice">
+      <input type="radio" name="choice" value="{{ choice.id }}" required>
+      {{ choice.text }}
+    </label>
+    {% endfor %}
+    <button type="submit" class="cm-poll-submit">Voter</button>
+    <p style="margin-top:10px;font-family:'Space Mono',monospace;font-size:.6rem;color:#7A7465;text-align:center;">
+      {{ global_active_poll.total_votes }} votes
+    </p>
+  </form>
 </div>
 {% endif %}

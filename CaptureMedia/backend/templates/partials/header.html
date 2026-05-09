@@ -1,87 +1,71 @@
- {% load static %}   
-<header>
-    {% if global_breaking_news %}
-    <div class="breaking-news-ticker">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <span class="badge bg-dark text-white px-3 py-1">BREAKING</span>
-                </div>
-                <div class="col">
-                        <div class="ticker-wrapper" style="overflow: hidden; display: block;">
-                            <div class="ticker-content">{% for news in global_breaking_news %}<a href="{{ news.url|default:'#' }}" class="text-dark mx-4"> • {{ news.text }}</a>{% endfor %}{% for news in global_breaking_news %}<a href="{{ news.url|default:'#' }}" class="text-dark mx-4"> • {{ news.text }}</a>{% endfor %}</div>
-                        </div>
-                </div>
-            </div>
-        </div>
+{% load static %}
+
+{% if global_breaking_news %}
+<div class="cm-ticker">
+  <div class="cm-ticker-label">BREAKING</div>
+  <div class="cm-ticker-track">
+    <div class="cm-ticker-content">
+      {% for news in global_breaking_news %}
+      <a href="{{ news.url|default:'#' }}">{{ news.text }}</a>
+      {% endfor %}
+      {% for news in global_breaking_news %}
+      <a href="{{ news.url|default:'#' }}">{{ news.text }}</a>
+      {% endfor %}
     </div>
-    {% endif %}
+  </div>
+</div>
+{% endif %}
 
+<header class="cm-header">
+  <div class="cm-container">
+    <div class="cm-header-inner">
 
-    <div class="rs-header-area rs-header-one">
-            <div class="container-fluid g-0">
-                <div class="header-wrapper d-flex align-items-center justify-content-between px-4 py-1">
-                    <div class="header-left d-flex align-items-center">
-                        <div class="header-logo me-4">
-                            <a href="{% url 'index' %}">
-                                {% if site_settings.logo %}
-                                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="max-height: 70px;">
-                                {% else %}
-                                <img src="{% static 'assets/images/logo/logo-white.png' %}" alt="logo">
-                                {% endif %}
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="header-menu">
-                        <nav id="mobile-menu-two" class="main-menu">
-                            <ul class="multipage-menu">
-                                <li><a href="{% url 'index' %}">Home</a></li>
-                                {% for cat in global_categories %}
-                                {% if not cat.parent and cat.slug %}
-                                <li class="menu-item-has-children">
-                                    <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
-                                    {% if cat.children.exists %}
-                                    <ul class="submenu">
-                                        {% for sub in cat.children.all %}
-                                        {% if sub.slug %}
-                                        <li><a href="{% url 'category_articles' sub.slug %}">{{ sub.name }}</a></li>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                    {% endif %}
-                                </li>
-                                {% endif %}
-                                {% endfor %}
-                                <li><a href="{% url 'mediatheque' %}">Médiathèque</a></li>
-                                <li><a href="{% url 'contact' %}">Contact</a></li>
-                            </ul>
-                        </nav>
-                    </div>
+      <!-- Logo -->
+      <a href="{% url 'index' %}" class="cm-logo">
+        {% if site_settings.logo %}
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+        {% else %}
+        <span class="cm-logo-text">Capture<span>Media</span></span>
+        {% endif %}
+      </a>
 
-                    <div class="header-right">
-                        <div class="header-icon-wrapper">
-                            <div class="header-search-wrapper">
-                                <form action="{% url 'search' %}" method="get">
-                                    <div class="header-search">
-                                        <input type="text" name="q" placeholder="Rechercher..." value="{{ query|default:'' }}">
-                                        <button type="submit"><i class="ri-search-line"></i></button>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="header-btn">
-                                <a class="rs-btn" href="{% url 'login' %}">Connexion</a>
-                            </div>
-                            <div class="header-hamburger">
-                                <div class="sidebar-toggle">
-                                    <a class="header-bar-icon" href="javascript:void(0)">
-                                        <span></span><span></span><span></span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      <!-- Nav -->
+      <nav class="cm-nav">
+        <a href="{% url 'index' %}">Accueil</a>
+        {% for cat in global_categories %}
+          {% if not cat.parent and cat.slug %}
+          {% if cat.children.exists %}
+          <div class="cm-nav-dropdown">
+            <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
+            <div class="cm-dropdown-menu">
+              {% for sub in cat.children.all %}
+              {% if sub.slug %}
+              <a href="{% url 'category_articles' sub.slug %}">{{ sub.name }}</a>
+              {% endif %}
+              {% endfor %}
             </div>
-        </div>
+          </div>
+          {% else %}
+          <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
+          {% endif %}
+          {% endif %}
+        {% endfor %}
+        <a href="{% url 'mediatheque' %}">Médiathèque</a>
+        <a href="{% url 'contact' %}">Contact</a>
+      </nav>
+
+      <!-- Actions -->
+      <div class="cm-header-actions">
+        <form class="cm-search-form" action="{% url 'search' %}" method="get">
+          <input type="text" name="q" placeholder="Rechercher…" value="{{ query|default:'' }}">
+          <button type="submit"><i class="ri-search-line"></i></button>
+        </form>
+        <a href="{% url 'login' %}" class="cm-btn-login">Connexion</a>
+        <button class="cm-hamburger" onclick="openMobileNav()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
 </header>

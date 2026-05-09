@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
+from .utils import detect_media_platform
 
 
 class Category(models.Model):
@@ -58,6 +59,16 @@ class Article(models.Model):
         ('archived', 'Archivé'),
     ]
 
+    PLATFORM_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('tiktok', 'TikTok'),
+        ('instagram', 'Instagram'),
+        ('twitter', 'Twitter / X'),
+        ('facebook', 'Facebook'),
+        ('whatsapp', 'WhatsApp'),
+        ('other', 'Autre'),
+    ]
+
     title = models.CharField(max_length=300, verbose_name="Titre")
     slug = models.SlugField(unique=True, blank=True, max_length=350)
     excerpt = models.TextField(blank=True, verbose_name="Résumé", max_length=500)
@@ -69,6 +80,9 @@ class Article(models.Model):
                                 related_name='articles', verbose_name="Auteur")
     featured_image = models.ImageField(upload_to='articles/', blank=True, null=True,
                                         verbose_name="Image à la une")
+    media_url = models.URLField(blank=True, null=True, verbose_name="URL du média externe")
+    media_platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, blank=True,
+                                       verbose_name="Plateforme")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
                                verbose_name="Statut")
     is_featured = models.BooleanField(default=False, verbose_name="À la une")
@@ -98,6 +112,7 @@ class Article(models.Model):
             self.slug = slug
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
+        self.media_platform = detect_media_platform(self.media_url or '')
         super().save(*args, **kwargs)
 
     @property

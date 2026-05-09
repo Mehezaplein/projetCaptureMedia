@@ -1,113 +1,144 @@
 {% load static %}
-<footer class="rs-footer-area rs-footer-one">
-    <div class="footer-top">
-        <div class="container">
-            <div class="row g-5">
-                <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-6">
-                    <div class="rs-footer-widget footer-1-col-1">
-                        <div class="rs-footer-widget-logo">
-                            <a href="{% url 'index' %}">
-                                {% if site_settings.logo %}
-                                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="max-height: 50px;">
-                                {% else %}
-                                <img src="{% static 'assets/images/logo/logo-white.png' %}" alt="logo">
-                                {% endif %}
-                            </a>
-                        </div>
-                        <div class="rs-footer-widget-content">
-                            <p class="rs-footer-widget-description">
-                                {{ site_settings.about_us|truncatewords:30|default:"CaptureMedia, votre source d'information fiable." }}
-                            </p>
-                            <div class="rs-footer-widget-social">
-                                <div class="rs-theme-social theme-social">
-                                    {% if site_settings.facebook_url %}<a href="{{ site_settings.facebook_url }}"><i class="ri-facebook-fill"></i></a>{% endif %}
-                                    {% if site_settings.twitter_url %}<a href="{{ site_settings.twitter_url }}"><i class="ri-twitter-x-fill"></i></a>{% endif %}
-                                    {% if site_settings.instagram_url %}<a href="{{ site_settings.instagram_url }}"><i class="ri-instagram-fill"></i></a>{% endif %}
-                                    {% if site_settings.linkedin_url %}<a href="{{ site_settings.linkedin_url }}"><i class="ri-linkedin-box-fill"></i></a>{% endif %}
-                                    {% if site_settings.youtube_url %}<a href="{{ site_settings.youtube_url }}"><i class="ri-youtube-fill"></i></a>{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-2 col-xl-2 col-lg-2 col-md-6">
-                    <div class="footer-widget footer-1-col-2">
-                        <h6 class="footer-widget-title">Catégories​</h6>
-                        <div class="footer-widget-link">
-                            <ul>
-                                {% for cat in global_categories|slice:":8" %}
-                                {% if cat.slug %}
-                                <li><a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a></li>
-                                {% endif %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-xl-4 col-lg-4 col-md-6">
-                    <div class="footer-widget footer-1-col-3">
-                        <h5 class="footer-widget-title">Newsletter</h5>
-                        <div class="footer-widget-content">
-                            <p class="text-white mb-3">Abonnez-vous pour recevoir nos dernières actualités.</p>
-                            <form id="newsletter-form" class="rs-footer-newsletter">
-                                {% csrf_token %}
-                                <input type="email" name="email" placeholder="Votre email..." required class="form-control mb-2">
-                                <button type="submit" class="rs-btn w-100">S'abonner</button>
-                            </form>
-                            <div id="newsletter-message" class="mt-2 text-white" style="display:none;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-4 col-xl-3 col-lg-3 col-md-6">
-                    <div class="footer-widget footer-1-col-4">
-                        <h5 class="footer-widget-title">Contact</h5>
-                        <ul class="text-white list-unstyled">
-                            {% if site_settings.address %}<li><i class="ri-map-pin-line me-2"></i> {{ site_settings.address }}</li>{% endif %}
-                            {% if site_settings.phone %}<li><i class="ri-phone-line me-2"></i> {{ site_settings.phone }}</li>{% endif %}
-                            {% if site_settings.email %}<li><i class="ri-mail-line me-2"></i> {{ site_settings.email }}</li>{% endif %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
+<footer class="cm-footer">
+  <div class="cm-footer-top">
+    <div class="cm-container">
+      <div class="cm-footer-grid">
+
+        <!-- Brand -->
+        <div>
+          <div class="cm-footer-brand-name">
+            Capture<span>Media</span>
+          </div>
+          <p class="cm-footer-desc">
+            {{ site_settings.site_description|default:"Votre source d'information fiable. Actualités, analyses et reportages en continu depuis Lomé, Togo." }}
+          </p>
+          <div class="cm-footer-socials">
+            {% if site_settings.facebook_url %}
+            <a href="{{ site_settings.facebook_url }}" class="cm-social-link" target="_blank"><i class="ri-facebook-fill"></i></a>
+            {% endif %}
+            {% if site_settings.twitter_url %}
+            <a href="{{ site_settings.twitter_url }}" class="cm-social-link" target="_blank"><i class="ri-twitter-x-fill"></i></a>
+            {% endif %}
+            {% if site_settings.instagram_url %}
+            <a href="{{ site_settings.instagram_url }}" class="cm-social-link" target="_blank"><i class="ri-instagram-fill"></i></a>
+            {% endif %}
+            {% if site_settings.youtube_url %}
+            <a href="{{ site_settings.youtube_url }}" class="cm-social-link" target="_blank"><i class="ri-youtube-fill"></i></a>
+            {% endif %}
+            {% if site_settings.tiktok_url %}
+            <a href="{{ site_settings.tiktok_url }}" class="cm-social-link" target="_blank"><i class="ri-tiktok-fill"></i></a>
+            {% endif %}
+            {% if site_settings.whatsapp_number %}
+            <a href="https://wa.me/{{ site_settings.whatsapp_number }}" class="cm-social-link" target="_blank"><i class="ri-whatsapp-fill"></i></a>
+            {% endif %}
+          </div>
         </div>
-    </div>
-    <div class="rs-footer-copyright-area rs-copyright-one">
-        <div class="container">
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="rs-footer-copyright-wrapper">
-                        <div class="rs-footer-copyright-item">
-                            <p class="mb-0">&copy; <span id="year"></span> {{ site_settings.site_name|default:"CaptureMedia" }}. Tous droits réservés.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+        <!-- Categories -->
+        <div>
+          <div class="cm-footer-widget-title">Catégories</div>
+          <div class="cm-footer-links">
+            {% for cat in global_categories|slice:":8" %}
+            {% if cat.slug %}
+            <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
+            {% endif %}
+            {% endfor %}
+          </div>
         </div>
+
+        <!-- Contact -->
+        <div>
+          <div class="cm-footer-widget-title">Contact</div>
+          {% if site_settings.contact_address %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-map-pin-line"></i>
+            <span>{{ site_settings.contact_address }}</span>
+          </div>
+          {% else %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-map-pin-line"></i>
+            <span>Tokoin-Lycée, Lomé, Togo</span>
+          </div>
+          {% endif %}
+          {% if site_settings.contact_phone %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-phone-line"></i>
+            <a href="tel:{{ site_settings.contact_phone }}" style="color:inherit;">{{ site_settings.contact_phone }}</a>
+          </div>
+          {% else %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-phone-line"></i>
+            <span>+228 99 77 67 67</span>
+          </div>
+          {% endif %}
+          {% if site_settings.contact_email %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-mail-line"></i>
+            <a href="mailto:{{ site_settings.contact_email }}" style="color:inherit;">{{ site_settings.contact_email }}</a>
+          </div>
+          {% else %}
+          <div class="cm-footer-contact-item">
+            <i class="ri-mail-line"></i>
+            <a href="mailto:capturedreamsmakers@gmail.com" style="color:inherit;">capturedreamsmakers@gmail.com</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Newsletter -->
+        <div>
+          <div class="cm-footer-widget-title">Newsletter</div>
+          <p style="font-size:.85rem;color:rgba(255,255,255,.5);margin-bottom:16px;">
+            Recevez nos dernières actualités directement dans votre boîte mail.
+          </p>
+          <form class="cm-footer-newsletter" id="footer-newsletter-form">
+            {% csrf_token %}
+            <input type="email" name="email" placeholder="votre@email.com" required>
+            <button type="submit">S'abonner →</button>
+          </form>
+          <div id="footer-newsletter-msg" style="display:none;margin-top:10px;font-size:.8rem;color:#FFCC00;"></div>
+        </div>
+
+      </div>
     </div>
+  </div>
+
+  <div class="cm-footer-bottom">
+    <div class="cm-container" style="width:100%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>&copy; <span id="footer-year"></span> {{ site_settings.site_name|default:"CaptureMedia" }}. Tous droits réservés.</span>
+        <div style="display:flex;gap:20px;">
+          <a href="{% url 'index' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Accueil</a>
+          <a href="{% url 'contact' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Contact</a>
+          <a href="{% url 'mediatheque' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Médiathèque</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </footer>
 
 <script>
-document.getElementById('newsletter-form').addEventListener('submit', function(e) {
+(function() {
+  const yr = document.getElementById('footer-year');
+  if (yr) yr.textContent = new Date().getFullYear();
+
+  const form = document.getElementById('footer-newsletter-form');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
     e.preventDefault();
     const email = this.querySelector('input[name="email"]').value;
-    const csrf = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
-    const msg = document.getElementById('newsletter-message');
-    
+    const csrf  = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const msg   = document.getElementById('footer-newsletter-msg');
     fetch('{% url "newsletter_signup" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrf
-        },
-        body: `email=${encodeURIComponent(email)}`
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+      body: `email=${encodeURIComponent(email)}`
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        msg.textContent = data.message;
-        msg.style.display = 'block';
-        if(data.status === 'success') {
-            this.reset();
-        }
+      msg.textContent = data.message;
+      msg.style.display = 'block';
+      if (data.status === 'success') form.reset();
     });
-});
+  });
+})();
 </script>
