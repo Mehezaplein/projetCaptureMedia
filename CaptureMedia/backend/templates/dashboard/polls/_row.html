@@ -29,9 +29,15 @@
       <a href="{% url 'dashboard:poll_edit' poll.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
         <i class="bi bi-pencil"></i>
       </a>
-      <button hx-delete="{% url 'dashboard:poll_delete' poll.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer ce sondage ?" hx-target="#poll-{{ poll.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
-        <i class="bi bi-trash"></i>
-      </button>
+      <form hx-post="{% url 'dashboard:poll_delete' poll.id %}"
+            hx-target="#poll-{{ poll.id }}"
+            hx-swap="outerHTML swap:0.3s"
+            hx-confirm="Êtes-vous sûr de vouloir supprimer ce sondage ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
     </div>
   </td>
 </tr>

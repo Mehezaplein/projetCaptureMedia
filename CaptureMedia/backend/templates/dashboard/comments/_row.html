@@ -32,9 +32,15 @@
           <i class="bi bi-exclamation-triangle"></i>
         </button>
       {% endif %}
-      <button hx-delete="{% url 'dashboard:comment_delete' comment.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer ce commentaire ?" hx-target="#comment-{{ comment.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
-        <i class="bi bi-trash"></i>
-      </button>
+      <form hx-post="{% url 'dashboard:comment_delete' comment.id %}"
+            hx-target="#comment-{{ comment.id }}"
+            hx-swap="outerHTML swap:0.3s"
+            hx-confirm="Êtes-vous sûr de vouloir supprimer ce commentaire ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
     </div>
   </td>
 </tr>

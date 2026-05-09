@@ -25,9 +25,15 @@
       <a href="{% url 'dashboard:ad_edit' ad.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
         <i class="bi bi-pencil"></i>
       </a>
-      <button hx-delete="{% url 'dashboard:ad_delete' ad.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cette publicité ?" hx-target="#ad-{{ ad.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
-        <i class="bi bi-trash"></i>
-      </button>
+      <form hx-post="{% url 'dashboard:ad_delete' ad.id %}"
+            hx-target="#ad-{{ ad.id }}"
+            hx-swap="outerHTML swap:0.3s"
+            hx-confirm="Êtes-vous sûr de vouloir supprimer cette publicité ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
     </div>
   </td>
 </tr>

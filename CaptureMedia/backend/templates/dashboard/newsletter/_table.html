@@ -22,9 +22,15 @@
           </td>
           <td class="text-sm">{{ subscriber.subscribed_at|date:'d M Y' }}</td>
           <td>
-            <button hx-delete="{% url 'dashboard:newsletter_delete' subscriber.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cet abonné ?" hx-target="#subscriber-{{ subscriber.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
-              <i class="bi bi-trash"></i>
-            </button>
+            <form hx-post="{% url 'dashboard:newsletter_delete' subscriber.id %}"
+                  hx-target="#subscriber-{{ subscriber.id }}"
+                  hx-swap="outerHTML swap:0.3s"
+                  hx-confirm="Êtes-vous sûr de vouloir supprimer cet abonné ?">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
           </td>
         </tr>
         {% endfor %}
