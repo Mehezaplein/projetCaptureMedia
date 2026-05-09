@@ -375,11 +375,13 @@ def tag_delete(request, pk):
 @login_required
 def comments_list(request):
     qs = Comment.objects.select_related('article').order_by('-created_at')
-    search = request.GET.get('q', '')
-    status_filter = request.GET.get('status', '')
+    
+    # Handle both GET and POST for HTMX
+    search = request.POST.get('search') or request.GET.get('q', '')
+    status_filter = request.POST.get('status') or request.GET.get('status', '')
 
     if search:
-        qs = qs.filter(Q(content__icontains=search) | Q(author_name__icontains=search))
+        qs = qs.filter(Q(content__icontains=search) | Q(name__icontains=search))
     if status_filter:
         qs = qs.filter(status=status_filter)
 
@@ -387,6 +389,7 @@ def comments_list(request):
     page = paginator.get_page(request.GET.get('page', 1))
 
     context = {
+        'comments': page,
         'page_obj': page,
         'search': search,
         'status_filter': status_filter,
@@ -494,11 +497,11 @@ def media_delete(request, pk):
 @login_required
 def newsletter_list(request):
     qs = Newsletter.objects.order_by('-subscribed_at')
-    search = request.GET.get('q', '')
-    active_filter = request.GET.get('active', '')
+    search = request.POST.get('search') or request.GET.get('q', '')
+    active_filter = request.POST.get('active') or request.GET.get('active', '')
 
     if search:
-        qs = qs.filter(Q(email__icontains=search) | Q(first_name__icontains=search))
+        qs = qs.filter(Q(email__icontains=search))
     if active_filter == '1':
         qs = qs.filter(is_active=True)
     elif active_filter == '0':
@@ -508,10 +511,14 @@ def newsletter_list(request):
     page = paginator.get_page(request.GET.get('page', 1))
 
     context = {
+        'subscribers': page,
         'page_obj': page,
         'search': search,
         'active_filter': active_filter,
-        'total_active': Newsletter.objects.filter(is_active=True).count(),
+        'total_subscribers': Newsletter.objects.count(),
+        'confirmed_count': Newsletter.objects.filter(is_active=True).count(),
+        'pending_count': 0, 
+        'unsubscribed_count': Newsletter.objects.filter(is_active=False).count(),
         'page_title': 'Newsletter',
         'active_menu': 'newsletter',
     }

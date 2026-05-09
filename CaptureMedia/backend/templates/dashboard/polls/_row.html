@@ -1,11 +1,20 @@
+{% load l10n %}
 <tr id="poll-{{ poll.id }}">
-  <td class="font-bold">{{ poll.question }}</td>
-  <td class="text-sm">
-    <div class="flex items-center gap-8">
-      <span>{{ poll.total_votes }}</span>
-      <div class="progress-bar-outer">
-        <div class="progress-bar-inner" style="width: 100%;"></div>
+  <td class="font-bold" style="vertical-align: top; padding-top: 20px;">{{ poll.question }}</td>
+  <td class="text-sm" style="padding: 15px; min-width: 250px;">
+    {% for choice in poll.choices.all %}
+    <div class="mb-2">
+      <div class="d-flex justify-content-between mb-1" style="font-size: 11px;">
+        <span>{{ choice.text }}</span>
+        <span class="fw-bold">{{ choice.percentage|unlocalize }}% <small class="text-muted">({{ choice.votes }})</small></span>
       </div>
+      <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px;">
+        <div class="progress-bar" style="width: {{ choice.percentage|unlocalize }}%; background-color: var(--cm-yellow);"></div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="mt-2 text-muted" style="font-size: 10px; border-top: 1px solid rgba(255,255,255,0.05); pt-1">
+      Total : {{ poll.total_votes }} votes
     </div>
   </td>
   <td class="text-sm">{{ poll.created_at|date:'d M Y' }}</td>

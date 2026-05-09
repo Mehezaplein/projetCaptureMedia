@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<main>
+    <section class="rs-blog-area pt-30 pb-80">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Left: Category News Feed -->
+                <div class="col-lg-8">
+                    <div class="section-title mb-25 border-bottom pb-2">
+                        <h2 class="title">{{ category.name }}</h2>
+                        <p class="text-muted small">Tous les articles dans la catégorie {{ category.name }}</p>
+                    </div>
+                    <div class="latest-news">
+                        {% for article in articles %}
+                        <div class="rs-post-list-item d-flex mb-20 pb-20 border-bottom">
+                            <div class="rs-post-list-thumb me-3" style="width: 200px; flex-shrink: 0;">
+                                <a href="{% url 'article_detail' article.slug %}">
+                                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded" style="height: 130px; width: 100%; object-fit: cover;">
+                                </a>
+                            </div>
+                            <div class="rs-post-list-content">
+                                <h4 class="mb-2" style="font-size: 1.2rem;">
+                                    <a href="{% url 'article_detail' article.slug %}" class="text-dark fw-bold">{{ article.title }}</a>
+                                </h4>
+                                <p class="small text-muted mb-2">{{ article.content|striptags|truncatewords:20 }}</p>
+                                <div class="rs-post-meta small text-muted">
+                                    <span><i class="ri-calendar-line"></i> {{ article.published_at|date:"d M, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <p class="lead">Aucun article dans cette catégorie.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Right: Sidebar (Dense) -->
+                <div class="col-lg-4">
+                    <div class="sidebar-sticky" style="position: sticky; top: 100px;">
+                        <!-- Most Read -->
+                        <div class="sidebar-widget mb-40">
+                            <div class="section-title mb-20 border-bottom">
+                                <h5 class="title">LES PLUS LUS</h5>
+                            </div>
+                            {% for sug in global_suggestions %}
+                            <div class="d-flex mb-3 align-items-start border-bottom pb-2">
+                                <div class="count fw-bold text-brand me-3" style="font-size: 18px;">0{{ forloop.counter }}</div>
+                                <h6 style="font-size: 13px; line-height: 1.4;">
+                                    <a href="{% url 'article_detail' sug.slug %}" class="text-dark">{{ sug.title }}</a>
+                                </h6>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Newsletter -->
+                        <div class="sidebar-widget mb-40 brand-bg p-4 rounded text-center">
+                            <h5 class="mb-2">Newsletter</h5>
+                            <p class="small mb-3">Ne manquez aucune info de la catégorie {{ category.name }}.</p>
+                            <form action="{% url 'newsletter_signup' %}" method="post">
+                                {% csrf_token %}
+                                <input type="email" name="email" class="form-control mb-2" placeholder="Votre email" required>
+                                <button type="submit" class="rs-btn btn-dark w-100">S'abonner</button>
+                            </form>
+                        </div>
+
+                        <!-- Poll Slider -->
+                        {% include 'partials/sidebar_polls.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

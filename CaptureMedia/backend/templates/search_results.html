@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Résultats pour "{{ query }}" - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<main>
+    <section class="rs-blog-area pt-30 pb-80">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Left Content -->
+                <div class="col-lg-8">
+                    <div class="section-title mb-25 border-bottom pb-2">
+                        <h2 class="title">Recherche</h2>
+                        <p class="text-muted small">Résultats pour : <strong>"{{ query }}"</strong></p>
+                    </div>
+                    <div class="latest-news">
+                        {% for article in articles %}
+                        <div class="rs-post-list-item d-flex mb-20 pb-20 border-bottom">
+                            <div class="rs-post-list-thumb me-3" style="width: 180px; flex-shrink: 0;">
+                                <a href="{% url 'article_detail' article.slug %}">
+                                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded" style="height: 120px; width: 100%; object-fit: cover;">
+                                </a>
+                            </div>
+                            <div class="rs-post-list-content">
+                                <div class="rs-post-tag mb-1">
+                                    <a href="{% url 'category_articles' article.category.slug %}" class="text-brand uppercase fw-bold" style="font-size: 10px;">{{ article.category.name }}</a>
+                                </div>
+                                <h4 class="mb-2" style="font-size: 1.1rem;">
+                                    <a href="{% url 'article_detail' article.slug %}" class="text-dark fw-bold">{{ article.title }}</a>
+                                </h4>
+                                <p class="small text-muted mb-0">{{ article.content|striptags|truncatewords:15 }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <p class="lead">Aucun article ne correspond à votre recherche.</p>
+                            <a href="{% url 'index' %}" class="rs-btn btn-brand">Retour à l'accueil</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Right: Sidebar -->
+                <div class="col-lg-4">
+                    <div class="sidebar-sticky" style="position: sticky; top: 100px;">
+                        <!-- Search Widget -->
+                        <div class="sidebar-widget mb-30 p-3 bg-light rounded">
+                            <form action="{% url 'search' %}" method="get" class="d-flex">
+                                <input type="text" name="q" class="form-control me-2" placeholder="Nouvelle recherche..." value="{{ query }}">
+                                <button type="submit" class="btn btn-dark"><i class="ri-search-line"></i></button>
+                            </form>
+                        </div>
+
+                        <!-- Most Read -->
+                        <div class="sidebar-widget mb-40">
+                            <div class="section-title mb-20 border-bottom">
+                                <h5 class="title">À LIRE AUSSI</h5>
+                            </div>
+                            {% for sug in global_suggestions %}
+                            <div class="d-flex mb-3 align-items-start border-bottom pb-2">
+                                <div class="count fw-bold text-brand me-3" style="font-size: 18px;">0{{ forloop.counter }}</div>
+                                <h6 style="font-size: 13px; line-height: 1.4;">
+                                    <a href="{% url 'article_detail' sug.slug %}" class="text-dark">{{ sug.title }}</a>
+                                </h6>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

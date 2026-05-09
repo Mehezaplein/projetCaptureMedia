@@ -5,7 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Dashboard{% endblock %} — Capture Media</title>
+  <!-- Favicon -->
+  {% if site_settings.favicon %}
+  <link rel="icon" href="{{ site_settings.favicon.url }}" />
+  {% elif site_settings.logo %}
+  <link rel="icon" href="{{ site_settings.logo.url }}" />
+  {% else %}
   <link rel="icon" href="{% static 'assets/images/favicon.png' %}" />
+  {% endif %}
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -887,8 +894,8 @@
       transition: transform var(--transition);
     }
 
-    input:checked + .toggle-slider { background: var(--cm-yellow); }
-    input:checked + .toggle-slider::before { transform: translateX(18px); background: #111; }
+    input:checked + .toggle-slider { background: #1b5e20; } /* Dark green background */
+    input:checked + .toggle-slider::before { transform: translateX(18px); background: #4caf50; } /* Bright green knob */
 
     /* ─── Responsive ──────────────────────────────────── */
     @media (max-width: 768px) {

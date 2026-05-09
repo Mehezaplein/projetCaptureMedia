@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Médiathèque - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<main>
+    <section class="rs-gallery-area pt-30 pb-80">
+        <div class="container">
+            <div class="section-title mb-40 border-bottom pb-2">
+                <h2 class="title">Médiathèque</h2>
+                <p class="text-muted">Découvrez nos contenus multimédias</p>
+            </div>
+            <div class="row g-4">
+                {% for media in media_files %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="rs-gallery-item mb-30 shadow-sm rounded overflow-hidden">
+                        {% if media.file_type == 'image' %}
+                        <div class="rs-gallery-thumb">
+                            <a class="popup-image" href="{{ media.file.url }}">
+                                <img src="{{ media.file.url }}" alt="media" style="height: 250px; object-fit: cover; width: 100%;">
+                            </a>
+                        </div>
+                        {% elif media.file_type == 'video' %}
+                        <div class="rs-gallery-thumb">
+                            <video controls style="width: 100%; height: 250px; object-fit: cover;">
+                                <source src="{{ media.file.url }}" type="video/mp4">
+                                Votre navigateur ne supporte pas la lecture de vidéos.
+                            </video>
+                        </div>
+                        {% else %}
+                        <div class="rs-gallery-thumb p-5 text-center brand-bg-light">
+                            <i class="ri-file-text-line" style="font-size: 4rem; color: var(--brand-yellow);"></i>
+                            <p class="mt-2"><a href="{{ media.file.url }}" target="_blank" class="text-dark">Télécharger le document</a></p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="lead">La médiathèque est vide pour le moment.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
