@@ -1,33 +1,54 @@
 <tr id="ad-{{ ad.id }}">
-  <td class="font-bold">{{ ad.title }}</td>
-  <td class="text-sm">
-    {% if ad.position == 'header' %}
-      Header
-    {% elif ad.position == 'sidebar' %}
-      Sidebar
-    {% elif ad.position == 'footer' %}
-      Footer
-    {% elif ad.position == 'inline' %}
-      Inline (articles)
-    {% endif %}
+  <td>
+    <div style="display:flex;align-items:center;gap:12px;">
+      {% if ad.image %}
+      <img src="{{ ad.image.url }}" alt="{{ ad.title }}"
+           style="width:64px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;" />
+      {% else %}
+      <div style="width:64px;height:40px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-image" style="color:var(--text3);"></i>
+      </div>
+      {% endif %}
+      <span class="font-bold">{{ ad.title }}</span>
+    </div>
   </td>
   <td class="text-sm">
-    {{ ad.start_date|date:'d M Y' }} - {{ ad.end_date|date:'d M Y'|default:'-' }}
+    {% for val, label in ad.POSITION_CHOICES %}
+      {% if ad.position == val %}{{ label }}{% endif %}
+    {% endfor %}
+  </td>
+  <td class="text-sm">
+    {{ ad.start_date|date:'d M Y' }} → {{ ad.end_date|date:'d M Y' }}
   </td>
   <td>
-    <label class="toggle-switch">
-      <input type="checkbox" {% if ad.is_active %}checked{% endif %} hx-post="{% url 'dashboard:ad_toggle' ad.id %}" hx-target="#ad-{{ ad.id }}" hx-swap="outerHTML swap:1s" />
-      <span class="toggle-slider"></span>
-    </label>
+    <form hx-post="{% url 'dashboard:ad_toggle' ad.id %}"
+          hx-target="#ad-{{ ad.id }}"
+          hx-swap="outerHTML"
+          style="display:inline;">
+      {% csrf_token %}
+      <label class="toggle-switch" style="cursor:pointer;">
+        <input type="checkbox" {% if ad.is_active %}checked{% endif %}
+               onchange="this.closest('form').dispatchEvent(new Event('submit', {bubbles:true}))"
+               style="position:absolute;opacity:0;width:0;height:0;" />
+        <span class="toggle-slider"></span>
+      </label>
+      <button type="submit" style="display:none;"></button>
+    </form>
   </td>
   <td>
     <div class="flex gap-8">
       <a href="{% url 'dashboard:ad_edit' ad.id %}" class="btn btn-ghost btn-sm btn-icon" title="Modifier">
         <i class="bi bi-pencil"></i>
       </a>
-      <button hx-delete="{% url 'dashboard:ad_delete' ad.id %}" hx-confirm="Êtes-vous sûr de vouloir supprimer cette publicité ?" hx-target="#ad-{{ ad.id }}" hx-swap="outerHTML swap:1s" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
-        <i class="bi bi-trash"></i>
-      </button>
+      <form hx-post="{% url 'dashboard:ad_delete' ad.id %}"
+            hx-confirm="Supprimer cette publicité ?"
+            hx-target="#ad-{{ ad.id }}"
+            hx-swap="outerHTML swap:0.3s">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
     </div>
   </td>
 </tr>

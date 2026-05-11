@@ -6,6 +6,9 @@
 {% block content %}
 <main>
 
+  <!-- ── PUBLICITÉS EN-TÊTE ── -->
+  {% include 'partials/ads.html' with position='header' %}
+
   <!-- ── HERO ── -->
   {% if featured_articles %}
   <section class="cm-hero">
@@ -134,6 +137,9 @@
         <!-- Sidebar -->
         <aside class="cm-sidebar">
 
+          <!-- Publicités sidebar -->
+          {% include 'partials/ads.html' with position='sidebar_top' %}
+
           <!-- Most read -->
           <div class="cm-widget">
             <div class="cm-section-label accent">
@@ -158,6 +164,9 @@
             </form>
           </div>
 
+          <!-- Publicités sidebar bas -->
+          {% include 'partials/ads.html' with position='sidebar_bottom' %}
+
           <!-- Poll -->
           {% include 'partials/sidebar_polls.html' %}
 
@@ -165,6 +174,12 @@
       </div>
     </div>
   </section>
+
+  <!-- ── PUBLICITÉS PIED DE PAGE ── -->
+  {% include 'partials/ads.html' with position='footer' %}
+
+  <!-- ── POPUP ── -->
+  {% include 'partials/ads.html' with position='popup' %}
 
 </main>
 {% endblock %}

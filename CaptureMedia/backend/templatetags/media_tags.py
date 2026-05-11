@@ -1,6 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
-from backend.utils import extract_youtube_id
+from backend.utils import extract_youtube_id, extract_tiktok_id
 
 register = template.Library()
 
@@ -57,12 +57,24 @@ def embed_media(article):
 </div>''')
 
     if platform == 'tiktok':
-        return mark_safe(f'''
+        video_id = extract_tiktok_id(url)
+        if video_id:
+            return mark_safe(f'''
 <div class="embed-media embed-tiktok" style="display:flex;justify-content:center;margin:20px 0;">
-  <blockquote class="tiktok-embed" cite="{url}" style="max-width:605px;min-width:325px;">
+  <blockquote class="tiktok-embed" cite="{url}" data-video-id="{video_id}" style="max-width:605px;min-width:325px;">
     <section></section>
   </blockquote>
   <script async src="https://www.tiktok.com/embed.js"></script>
+</div>''')
+        return mark_safe(f'''
+<div class="embed-media embed-link" style="margin:20px 0;">
+  <a href="{url}" target="_blank" rel="noopener noreferrer"
+     style="display:inline-flex;align-items:center;gap:10px;padding:14px 20px;
+            background:#010101;color:#fff;border-radius:10px;text-decoration:none;
+            font-weight:600;font-size:15px;">
+    <i class="bi bi-tiktok" style="font-size:20px;"></i>
+    Voir sur TikTok
+  </a>
 </div>''')
 
     if platform == 'instagram':

@@ -2,6 +2,37 @@
 {% block title %}{{ page_title }}{% endblock %}
 {% block breadcrumb %}<a href="{% url 'dashboard:ads_list' %}">Publicités</a> / {{ page_title }}{% endblock %}
 
+{% block extra_head %}
+<style>
+  #ad-image-preview {
+    display: none;
+    max-width: 320px;
+    border-radius: 8px;
+    border: 2px solid var(--primary);
+    margin-top: 10px;
+  }
+  .current-image-wrap img {
+    max-width: 320px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .ad-stats-summary {
+    display: flex;
+    gap: 20px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .ad-stats-summary .stat { text-align: center; }
+  .ad-stats-summary .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .ad-stats-summary .stat-lbl { font-size: .75rem; color: var(--text3); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div class="page-header-left">
@@ -14,60 +45,84 @@
 
 <div class="card" style="max-width:700px;">
   <div class="card-body">
+
+    {% if ad %}
+    <div class="ad-stats-summary">
+      <div class="stat">
+        <div class="stat-val">{{ ad.impressions }}</div>
+        <div class="stat-lbl">Impressions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">{{ ad.clicks }}</div>
+        <div class="stat-lbl">Clics</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">{% if ad.impressions %}{{ ad.clicks|floatformat:0 }}%{% else %}—{% endif %}</div>
+        <div class="stat-lbl">CTR</div>
+      </div>
+    </div>
+    {% endif %}
+
     <form method="POST" enctype="multipart/form-data">
       {% csrf_token %}
 
       <div class="form-group">
         <label class="form-label">Titre <span class="required">*</span></label>
         <input type="text" name="title" class="form-control" required
-               value="{{ ad.title|default:'' }}" placeholder="Nom interne de la publicité…" />
+               value="{% if ad %}{{ ad.title }}{% elif form_data %}{{ form_data.title }}{% endif %}" placeholder="Nom interne de la publicité…" />
       </div>
 
       <div class="form-group">
         <label class="form-label">URL de destination <span class="required">*</span></label>
         <input type="url" name="url" class="form-control" required
-               value="{{ ad.url|default:'' }}" placeholder="https://…" />
+               value="{% if ad %}{{ ad.url }}{% elif form_data %}{{ form_data.url }}{% endif %}" placeholder="https://…" />
       </div>
 
       <div class="form-group">
         <label class="form-label">Position d'affichage <span class="required">*</span></label>
-        <select name="position" class="form-select">
+        <select name="position" class="form-select" id="positionSelect" onchange="updateFormatHint()" required>
           <option value="">— Choisir une position —</option>
           {% for val, label in positions %}
-          <option value="{{ val }}" {% if ad.position == val %}selected{% endif %}>{{ label }}</option>
+          <option value="{{ val }}" {% if ad and ad.position == val %}selected{% elif form_data and form_data.position == val %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
+        <div id="positionFormatHint" class="form-hint" style="margin-top:6px;"></div>
       </div>
 
       <div class="form-group">
         <label class="form-label">Image de la publicité {% if not ad %}<span class="required">*</span>{% endif %}</label>
-        {% if ad.image %}
-        <div style="margin-bottom:10px;">
-          <img src="{{ ad.image.url }}" style="max-width:300px;border-radius:8px;border:2px solid var(--border);" />
-          <div class="form-hint">En uploadant une nouvelle image, l'ancienne sera remplacée.</div>
+
+        <div class="current-image-wrap" id="currentImageWrap">
+          {% if ad.image %}
+          <img src="{{ ad.image.url }}" id="currentAdImage" alt="{{ ad.title }}" />
+          <div class="form-hint" style="margin-bottom:8px;">Image actuelle — sélectionnez-en une nouvelle pour la remplacer.</div>
+          {% endif %}
         </div>
-        {% endif %}
-        <input type="file" name="image" class="form-control" accept="image/*"
-               {% if not ad %}required{% endif %} />
-        <div class="form-hint">Formats recommandés : JPG, PNG, WebP. Taille selon la position.</div>
+
+        <img id="ad-image-preview" alt="Aperçu de la nouvelle image" />
+
+        <input type="file" name="image" id="adImageInput" class="form-control" accept="image/jpeg,image/png,image/webp"
+               {% if not ad %}required{% endif %}
+               onchange="previewAdImage(this)" />
+        <div class="form-hint" id="imageHint">Formats acceptés : JPG, PNG, WebP. Sélectionnez la position pour voir les dimensions recommandées.</div>
       </div>
 
       <div class="form-grid cols-2">
         <div class="form-group">
           <label class="form-label">Date de début <span class="required">*</span></label>
           <input type="date" name="start_date" class="form-control" required
-                 value="{{ ad.start_date|date:'Y-m-d'|default:'' }}" />
+                 value="{% if ad %}{{ ad.start_date|date:'Y-m-d' }}{% elif form_data %}{{ form_data.start_date }}{% endif %}" />
         </div>
         <div class="form-group">
           <label class="form-label">Date de fin <span class="required">*</span></label>
           <input type="date" name="end_date" class="form-control" required
-                 value="{{ ad.end_date|date:'Y-m-d'|default:'' }}" />
+                 value="{% if ad %}{{ ad.end_date|date:'Y-m-d' }}{% elif form_data %}{{ form_data.end_date }}{% endif %}" />
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-check">
-          <input type="checkbox" name="is_active" {% if not ad or ad.is_active %}checked{% endif %} />
+          <input type="checkbox" name="is_active" {% if ad %}{% if ad.is_active %}checked{% endif %}{% elif form_data %}{% if form_data.is_active %}checked{% endif %}{% else %}checked{% endif %} />
           <span class="form-check-label">Publicité active</span>
         </label>
       </div>
@@ -82,4 +137,50 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const FORMAT_HINTS = {
+    header: '📐 Format recommandé : <strong>728×90 px</strong> (bannière classique) ou <strong>970×90 px</strong> (super bannière). JPG/PNG/WebP, max 150 Ko.',
+    sidebar_top: '📐 Format recommandé : <strong>300×250 px</strong> (pavé) ou <strong>300×600 px</strong> (demi-page). JPG/PNG/WebP, max 200 Ko.',
+    sidebar_bottom: '📐 Format recommandé : <strong>300×250 px</strong> (pavé). JPG/PNG/WebP, max 200 Ko.',
+    article_top: '📐 Format recommandé : <strong>728×90 px</strong> (bannière) ou <strong>468×60 px</strong> (bannière courte). JPG/PNG/WebP, max 150 Ko.',
+    article_bottom: '📐 Format recommandé : <strong>728×90 px</strong> ou <strong>970×250 px</strong> (billboard). JPG/PNG/WebP, max 200 Ko.',
+    popup: '📐 Format recommandé : <strong>480×480 px</strong> (carré) ou <strong>480×600 px</strong> (portrait). JPG/PNG/WebP, max 300 Ko.',
+    footer: '📐 Format recommandé : <strong>728×90 px</strong> (bannière). JPG/PNG/WebP, max 150 Ko.',
+  };
+
+  function updateFormatHint() {
+    const sel = document.getElementById('positionSelect');
+    const hint = document.getElementById('positionFormatHint');
+    hint.innerHTML = FORMAT_HINTS[sel.value] || '';
+    hint.style.display = sel.value ? 'block' : 'none';
+  }
+
+  function previewAdImage(input) {
+    const preview = document.getElementById('ad-image-preview');
+    const current = document.getElementById('currentAdImage');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        if (current) current.style.display = 'none';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const start = document.querySelector('[name="start_date"]').value;
+    const end = document.querySelector('[name="end_date"]').value;
+    if (start && end && start > end) {
+      e.preventDefault();
+      alert('La date de fin doit être postérieure à la date de début.');
+    }
+  });
+
+  updateFormatHint();
+</script>
 {% endblock %}

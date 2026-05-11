@@ -36,11 +36,14 @@ urlpatterns = [
 
     # Médias
     path('medias/', views.media_library, name='media_library'),
+    path('medias/inutilises/', views.media_unused, name='media_unused'),
     path('medias/upload/', views.media_upload, name='media_upload'),
     path('medias/<int:pk>/supprimer/', views.media_delete, name='media_delete'),
 
     # Newsletter
     path('newsletter/', views.newsletter_list, name='newsletter_list'),
+    path('newsletter/envoyer/', views.newsletter_send, name='newsletter_send'),
+    path('newsletter/historique/', views.newsletter_history, name='newsletter_history'),
     path('newsletter/<int:pk>/supprimer/', views.newsletter_delete, name='newsletter_delete'),
 
     # Publicités

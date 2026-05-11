@@ -1,0 +1,224 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}Envoyer une newsletter{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:newsletter_list' %}">Newsletter</a> / Composer{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+  .newsletter-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) { .newsletter-layout { grid-template-columns: 1fr; } }
+  #quill-editor {
+    min-height: 300px;
+    border-radius: 0 0 8px 8px;
+    font-size: 14px;
+  }
+  .ql-toolbar.ql-snow { border-radius: 8px 8px 0 0; }
+  .ql-container.ql-snow { border-radius: 0 0 8px 8px; }
+  .preview-email {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .preview-header {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .smtp-warning {
+    background: var(--cm-yellow-soft2, #fffde6);
+    border: 1px solid var(--cm-yellow-soft, #ffe066);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .smtp-ok {
+    background: #e8f5e9;
+    border-color: #66bb6a;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Composer une newsletter</h1>
+    <p class="page-subtitle">{{ subscribers_count }} abonné{{ subscribers_count|pluralize }} actif{{ subscribers_count|pluralize }} recevront cet email</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'dashboard:newsletter_history' %}" class="btn btn-ghost">
+      <i class="bi bi-clock-history"></i> Historique
+    </a>
+    <a href="{% url 'dashboard:newsletter_list' %}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </div>
+</div>
+
+{% if not subscribers_count %}
+<div class="card">
+  <div class="card-body" style="text-align:center;padding:48px;">
+    <i class="bi bi-people" style="font-size:48px;color:var(--text3);display:block;margin-bottom:16px;"></i>
+    <h3 style="margin-bottom:8px;">Aucun abonné actif</h3>
+    <p style="color:var(--text2);">Il n'y a personne à qui envoyer la newsletter pour l'instant.</p>
+  </div>
+</div>
+{% else %}
+
+{% if smtp_configured %}
+<div class="smtp-warning smtp-ok">
+  <i class="bi bi-check-circle-fill" style="color:#2e7d32;font-size:18px;flex-shrink:0;margin-top:2px;"></i>
+  <div>
+    <strong>SMTP configuré</strong> — Les emails seront envoyés via <code>{{ smtp_host }}</code>.
+  </div>
+</div>
+{% else %}
+<div class="smtp-warning">
+  <i class="bi bi-exclamation-triangle-fill" style="color:var(--cm-yellow);font-size:18px;flex-shrink:0;margin-top:2px;"></i>
+  <div>
+    <strong>SMTP non configuré</strong> — Allez dans <a href="{% url 'dashboard:settings' %}">Paramètres → Email</a> pour configurer l'envoi. Les emails seront affichés dans la console en attendant.
+  </div>
+</div>
+{% endif %}
+
+<div class="newsletter-layout">
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-pencil-square"></i> Composer le message</span></div>
+    <div class="card-body">
+      <form method="POST" id="sendForm">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">Sujet de l'email <span class="required">*</span></label>
+          <input type="text" name="subject" id="subjectInput" class="form-control" required
+                 placeholder="Ex: Les actualités de la semaine — CaptureMedia" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contenu <span class="required">*</span></label>
+          <div id="quill-editor"></div>
+          <input type="hidden" name="body_html" id="bodyHtmlInput" />
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <a href="{% url 'dashboard:newsletter_list' %}" class="btn btn-ghost">Annuler</a>
+          <button type="button" class="btn btn-ghost" onclick="sendTest()">
+            <i class="bi bi-send-check"></i> Envoyer un test
+          </button>
+          <button type="submit" class="btn btn-primary"
+                  onclick="return confirm('Envoyer cette newsletter à {{ subscribers_count }} abonné(s) ?')">
+            <i class="bi bi-send-fill"></i>
+            Envoyer à {{ subscribers_count }} abonné{{ subscribers_count|pluralize }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-header"><span class="card-title"><i class="bi bi-eye"></i> Aperçu</span></div>
+      <div class="card-body">
+        <div class="preview-header">
+          <div><strong>De :</strong> {{ smtp_from }}</div>
+          <div style="margin-top:4px;"><strong>Sujet :</strong> <span id="previewSubject">…</span></div>
+        </div>
+        <div class="preview-email" id="bodyPreview">
+          <p style="color:#999;">Le contenu apparaîtra ici…</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><span class="card-title"><i class="bi bi-info-circle"></i> Informations</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--text2);">Destinataires</span>
+            <strong>{{ subscribers_count }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--text2);">Backend</span>
+            <strong>{% if smtp_configured %}SMTP{% else %}Console{% endif %}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--text2);">Lien désinscription</span>
+            <strong style="color:#2e7d32;">Inclus</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+  var quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Rédigez votre newsletter ici…',
+    modules: {
+      toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['blockquote', 'link', 'image'],
+        ['clean']
+      ]
+    }
+  });
+
+  document.getElementById('sendForm').addEventListener('submit', function() {
+    document.getElementById('bodyHtmlInput').value = quill.root.innerHTML;
+  });
+
+  quill.on('text-change', function() {
+    document.getElementById('bodyPreview').innerHTML = quill.root.innerHTML;
+  });
+
+  document.getElementById('subjectInput').addEventListener('input', function() {
+    document.getElementById('previewSubject').textContent = this.value || '…';
+  });
+
+  function sendTest() {
+    var subject = document.getElementById('subjectInput').value;
+    var body = quill.root.innerHTML;
+    if (!subject || quill.getText().trim().length < 5) {
+      alert('Veuillez remplir le sujet et le contenu avant d\'envoyer un test.');
+      return;
+    }
+    var email = prompt('Email de test :');
+    if (!email) return;
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.innerHTML = '<input name="csrfmiddlewaretoken" value="' + document.querySelector('[name=csrfmiddlewaretoken]').value + '">' +
+      '<input name="subject" value="' + subject.replace(/"/g, '&quot;') + '">' +
+      '<input name="body_html" value="' + body.replace(/"/g, '&quot;') + '">' +
+      '<input name="test_email" value="' + email + '">';
+    document.body.appendChild(form);
+    form.submit();
+  }
+</script>
+{% endblock %}

@@ -52,6 +52,9 @@
           </p>
           {% endif %}
 
+          <!-- Publicité début d'article -->
+          {% include 'partials/ads.html' with position='article_top' %}
+
           <!-- External media embed -->
           {% embed_media article %}
 
@@ -67,6 +70,9 @@
             {% endfor %}
           </div>
           {% endif %}
+
+          <!-- Publicité fin d'article -->
+          {% include 'partials/ads.html' with position='article_bottom' %}
 
           <!-- Related articles -->
           <div style="margin-top:52px;">
@@ -139,6 +145,8 @@
 
         <!-- Sidebar -->
         <aside class="cm-sidebar">
+          {% include 'partials/ads.html' with position='sidebar_top' %}
+
           <div class="cm-widget">
             <div class="cm-section-label accent">
               <h5>Dans la même catégorie</h5>
@@ -161,11 +169,15 @@
             </form>
           </div>
 
+          {% include 'partials/ads.html' with position='sidebar_bottom' %}
+
           {% include 'partials/sidebar_polls.html' %}
         </aside>
 
       </div>
     </div>
   </div>
+
+  {% include 'partials/ads.html' with position='popup' %}
 </main>
 {% endblock %}

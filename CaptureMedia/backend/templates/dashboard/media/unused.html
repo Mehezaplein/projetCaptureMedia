@@ -1,0 +1,73 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Fichiers inutilisés{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:media_library' %}">Médias</a> / Fichiers inutilisés{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Fichiers inutilisés</h1>
+    <p class="page-subtitle">{{ unused.count }} fichier{{ unused.count|pluralize }} non référencé{{ unused.count|pluralize }} dans les articles, catégories ou publicités</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{% url 'dashboard:media_library' %}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Bibliothèque
+    </a>
+    {% if unused %}
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete_all" />
+      <button type="submit" class="btn btn-danger"
+              onclick="return confirm('Supprimer les {{ unused.count }} fichier(s) inutilisé(s) définitivement ?')">
+        <i class="bi bi-trash3"></i> Tout supprimer
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if unused %}
+<div class="media-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;">
+  {% for media in unused %}
+  <div class="media-item" id="media-{{ media.pk }}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative;">
+    {% if media.file_type == 'image' %}
+      <img src="{{ media.file.url }}" alt="{{ media.title }}" style="width:100%;height:120px;object-fit:cover;display:block;" loading="lazy" />
+    {% elif media.file_type == 'video' %}
+      <div style="width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--cm-yellow);"><i class="bi bi-play-circle-fill"></i></div>
+    {% elif media.file_type == 'audio' %}
+      <div style="width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--cm-yellow);"><i class="bi bi-music-note-beamed"></i></div>
+    {% else %}
+      <div style="width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--text3);"><i class="bi bi-file-earmark-text"></i></div>
+    {% endif %}
+
+    <div class="media-actions" style="position:absolute;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;gap:8px;">
+      <form hx-post="{% url 'dashboard:media_delete' media.pk %}"
+            hx-target="#media-{{ media.pk }}"
+            hx-swap="outerHTML swap:0.2s"
+            hx-confirm="Supprimer ce fichier définitivement ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </form>
+    </div>
+
+    <div style="padding:8px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="{{ media.title|default:media.file.name }}">
+        {{ media.title|default:media.file.name|truncatechars:22 }}
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">{{ media.file_size_display }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<style>.media-item:hover .media-actions { display: flex !important; }</style>
+{% else %}
+<div class="card">
+  <div class="card-body" style="text-align:center;padding:60px 20px;">
+    <i class="bi bi-check-circle" style="font-size:48px;color:#38a169;display:block;margin-bottom:16px;"></i>
+    <h3 style="margin-bottom:8px;">Aucun fichier inutilisé</h3>
+    <p style="color:var(--text2);">Tous les fichiers de la bibliothèque sont référencés quelque part.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

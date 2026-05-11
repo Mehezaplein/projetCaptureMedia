@@ -1,19 +1,214 @@
-{% if global_active_poll %}
-<div class="cm-poll-widget">
-  <h5>Sondage du jour</h5>
-  <p class="cm-poll-question">{{ global_active_poll.question }}</p>
-  <form action="{% url 'poll_vote' global_active_poll.id %}" method="post">
-    {% csrf_token %}
-    {% for choice in global_active_poll.choices.all %}
+{% if global_active_polls %}
+{% for poll in global_active_polls %}
+<div class="cm-poll-widget" id="poll-widget-{{ poll.id }}">
+  <div class="cm-poll-header">
+    <i class="bi bi-bar-chart-fill"></i>
+    <h5>Sondage</h5>
+  </div>
+  <p class="cm-poll-question">{{ poll.question }}</p>
+  {% if poll.description %}
+  <p class="cm-poll-description">{{ poll.description }}</p>
+  {% endif %}
+
+  <div class="cm-poll-form" id="poll-form-{{ poll.id }}">
+    {% for choice in poll.choices.all %}
     <label class="cm-poll-choice">
-      <input type="radio" name="choice" value="{{ choice.id }}" required>
-      {{ choice.text }}
+      <input type="{% if poll.allow_multiple %}checkbox{% else %}radio{% endif %}"
+             name="poll_{{ poll.id }}" value="{{ choice.id }}" />
+      <span class="cm-poll-choice-text">{{ choice.text }}</span>
     </label>
     {% endfor %}
-    <button type="submit" class="cm-poll-submit">Voter</button>
-    <p style="margin-top:10px;font-family:'Space Mono',monospace;font-size:.6rem;color:#7A7465;text-align:center;">
-      {{ global_active_poll.total_votes }} votes
-    </p>
-  </form>
+    <button type="button" class="cm-poll-submit" onclick="submitPoll({{ poll.id }})">
+      <i class="bi bi-check2-circle"></i> Voter
+    </button>
+  </div>
+
+  <div class="cm-poll-results" id="poll-results-{{ poll.id }}" style="display:none;">
+    {% for choice in poll.choices.all %}
+    <div class="cm-poll-result-item" data-choice-id="{{ choice.id }}">
+      <div class="cm-poll-result-header">
+        <span class="cm-poll-result-text">{{ choice.text }}</span>
+        <span class="cm-poll-result-pct">{{ choice.percentage }}%</span>
+      </div>
+      <div class="cm-poll-result-bar">
+        <div class="cm-poll-result-fill" style="width: {{ choice.percentage }}%;"></div>
+      </div>
+      <span class="cm-poll-result-votes">{{ choice.votes }} vote{{ choice.votes|pluralize }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cm-poll-footer">
+    <span class="cm-poll-total" id="poll-total-{{ poll.id }}">{{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}</span>
+  </div>
 </div>
+{% endfor %}
+
+<script>
+(function() {
+  document.querySelectorAll('.cm-poll-widget').forEach(function(widget) {
+    var pollId = widget.id.replace('poll-widget-', '');
+    if (getCookie('poll_voted_' + pollId)) {
+      widget.querySelector('.cm-poll-form').style.display = 'none';
+      widget.querySelector('.cm-poll-results').style.display = 'block';
+    }
+  });
+})();
+
+function submitPoll(pollId) {
+  if (getCookie('poll_voted_' + pollId)) {
+    return;
+  }
+  var form = document.getElementById('poll-form-' + pollId);
+  var inputs = form.querySelectorAll('input[name="poll_' + pollId + '"]:checked');
+  if (inputs.length === 0) {
+    form.classList.add('cm-poll-shake');
+    setTimeout(function() { form.classList.remove('cm-poll-shake'); }, 500);
+    return;
+  }
+  var choiceIds = Array.from(inputs).map(function(i) { return i.value; });
+
+  var csrfToken = '{{ csrf_token }}';
+  var formData = new FormData();
+  formData.append('csrfmiddlewaretoken', csrfToken);
+  choiceIds.forEach(function(id) { formData.append('choice', id); });
+
+  fetch('/poll/vote/' + pollId + '/', {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      setCookie('poll_voted_' + pollId, '1', 30);
+      form.style.display = 'none';
+      var results = document.getElementById('poll-results-' + pollId);
+      results.style.display = 'block';
+      data.choices.forEach(function(c) {
+        var item = results.querySelector('[data-choice-id="' + c.id + '"]');
+        if (item) {
+          item.querySelector('.cm-poll-result-pct').textContent = c.percentage + '%';
+          item.querySelector('.cm-poll-result-fill').style.width = c.percentage + '%';
+          item.querySelector('.cm-poll-result-votes').textContent = c.votes + ' vote' + (c.votes !== 1 ? 's' : '');
+        }
+      });
+      document.getElementById('poll-total-' + pollId).textContent = data.total + ' vote' + (data.total !== 1 ? 's' : '');
+    }
+  });
+}
+
+function setCookie(name, value, days) {
+  var d = new Date();
+  d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+  document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+}
+
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+</script>
+
+{% elif global_active_poll %}
+{# Fallback pour un seul sondage #}
+<div class="cm-poll-widget" id="poll-widget-{{ global_active_poll.id }}">
+  <div class="cm-poll-header">
+    <i class="bi bi-bar-chart-fill"></i>
+    <h5>Sondage</h5>
+  </div>
+  <p class="cm-poll-question">{{ global_active_poll.question }}</p>
+
+  <div class="cm-poll-form" id="poll-form-{{ global_active_poll.id }}">
+    {% for choice in global_active_poll.choices.all %}
+    <label class="cm-poll-choice">
+      <input type="radio" name="poll_{{ global_active_poll.id }}" value="{{ choice.id }}" />
+      <span class="cm-poll-choice-text">{{ choice.text }}</span>
+    </label>
+    {% endfor %}
+    <button type="button" class="cm-poll-submit" onclick="submitPoll({{ global_active_poll.id }})">
+      <i class="bi bi-check2-circle"></i> Voter
+    </button>
+  </div>
+
+  <div class="cm-poll-results" id="poll-results-{{ global_active_poll.id }}" style="display:none;">
+    {% for choice in global_active_poll.choices.all %}
+    <div class="cm-poll-result-item" data-choice-id="{{ choice.id }}">
+      <div class="cm-poll-result-header">
+        <span class="cm-poll-result-text">{{ choice.text }}</span>
+        <span class="cm-poll-result-pct">{{ choice.percentage }}%</span>
+      </div>
+      <div class="cm-poll-result-bar">
+        <div class="cm-poll-result-fill" style="width: {{ choice.percentage }}%;"></div>
+      </div>
+      <span class="cm-poll-result-votes">{{ choice.votes }} vote{{ choice.votes|pluralize }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cm-poll-footer">
+    <span class="cm-poll-total" id="poll-total-{{ global_active_poll.id }}">{{ global_active_poll.total_votes }} vote{{ global_active_poll.total_votes|pluralize }}</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  var pollId = '{{ global_active_poll.id }}';
+  if (getCookie('poll_voted_' + pollId)) {
+    document.getElementById('poll-form-' + pollId).style.display = 'none';
+    document.getElementById('poll-results-' + pollId).style.display = 'block';
+  }
+})();
+
+function submitPoll(pollId) {
+  if (getCookie('poll_voted_' + pollId)) return;
+  var form = document.getElementById('poll-form-' + pollId);
+  var inputs = form.querySelectorAll('input[name="poll_' + pollId + '"]:checked');
+  if (inputs.length === 0) {
+    form.classList.add('cm-poll-shake');
+    setTimeout(function() { form.classList.remove('cm-poll-shake'); }, 500);
+    return;
+  }
+  var choiceIds = Array.from(inputs).map(function(i) { return i.value; });
+  var csrfToken = '{{ csrf_token }}';
+  var formData = new FormData();
+  formData.append('csrfmiddlewaretoken', csrfToken);
+  choiceIds.forEach(function(id) { formData.append('choice', id); });
+
+  fetch('/poll/vote/' + pollId + '/', {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      setCookie('poll_voted_' + pollId, '1', 30);
+      form.style.display = 'none';
+      var results = document.getElementById('poll-results-' + pollId);
+      results.style.display = 'block';
+      data.choices.forEach(function(c) {
+        var item = results.querySelector('[data-choice-id="' + c.id + '"]');
+        if (item) {
+          item.querySelector('.cm-poll-result-pct').textContent = c.percentage + '%';
+          item.querySelector('.cm-poll-result-fill').style.width = c.percentage + '%';
+          item.querySelector('.cm-poll-result-votes').textContent = c.votes + ' vote' + (c.votes !== 1 ? 's' : '');
+        }
+      });
+      document.getElementById('poll-total-' + pollId).textContent = data.total + ' vote' + (data.total !== 1 ? 's' : '');
+    }
+  });
+}
+
+function setCookie(name, value, days) {
+  var d = new Date();
+  d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+  document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+}
+
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+</script>
 {% endif %}

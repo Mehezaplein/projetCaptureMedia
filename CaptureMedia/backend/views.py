@@ -1,41 +1,16 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Q
+from django.db.models import Q, F
 from django.http import JsonResponse
 from django.contrib import messages
-from django.utils import timezone
-from .models import Article, Category, Comment, Advertisement, Poll, PollChoice, Newsletter, MediaFile
+from .models import Article, Category, Comment, Poll, PollChoice, Newsletter, MediaFile, SiteSettings, Advertisement
 
 def IndexPage(request):
-    """Page d'accueil avec articles à la une, dernières actualités et sidebar."""
-    # Plus d'articles à la une pour le slider
     featured_articles = Article.objects.filter(status='published', is_featured=True).order_by('-published_at')[:8]
     latest_articles = Article.objects.filter(status='published').order_by('-published_at')[:6]
-    
-    # Publicités (multiples)
-    today = timezone.now().date()
-    top_ads = Advertisement.objects.filter(
-        position='header', is_active=True, 
-        start_date__lte=today, end_date__gte=today
-    ).order_by('?')[:3]
-    
-    sidebar_ads = Advertisement.objects.filter(
-        position='sidebar_top', is_active=True,
-        start_date__lte=today, end_date__gte=today
-    ).order_by('-created_at')[:2]
-    
-    # Suggestions (basées sur les plus vus ou aléatoires)
-    suggestions = Article.objects.filter(status='published').order_by('-views_count')[:5]
-    
-    # Sondage actif
-    active_poll = Poll.objects.filter(is_active=True).first()
-    
+
     context = {
         'featured_articles': featured_articles,
         'latest_articles': latest_articles,
-        'suggestions': suggestions,
-        'top_ads': top_ads,
-        'sidebar_ads': sidebar_ads,
-        'active_poll': active_poll,
     }
     return render(request, "index.html", context)
 
@@ -56,17 +31,10 @@ def ArticleDetailPage(request, slug):
     # Commentaires approuvés
     comments = article.comments.filter(status='approved').order_by('-created_at')
     
-    today = timezone.now().date()
-    sidebar_ads = Advertisement.objects.filter(
-        position='sidebar_top', is_active=True,
-        start_date__lte=today, end_date__gte=today
-    ).order_by('-created_at')[:2]
-
     context = {
         'article': article,
         'related_articles': related_articles,
         'comments': comments,
-        'sidebar_ads': sidebar_ads,
     }
     return render(request, "article_detail.html", context)
 
@@ -118,15 +86,34 @@ def NewsletterSignup(request):
     return redirect('index')
 
 def PollVote(request, poll_id):
-    """Voter pour un sondage."""
     if request.method == 'POST':
-        choice_id = request.POST.get('choice')
-        if choice_id:
-            choice = get_object_or_404(PollChoice, pk=choice_id, poll_id=poll_id)
-            choice.votes += 1
-            choice.save()
+        choice_ids = request.POST.getlist('choice')
+        if choice_ids:
+            poll = get_object_or_404(Poll, pk=poll_id)
+            for cid in choice_ids:
+                PollChoice.objects.filter(pk=cid, poll_id=poll_id).update(votes=F('votes') + 1)
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                poll.refresh_from_db()
+                choices_data = []
+                for c in poll.choices.all():
+                    choices_data.append({
+                        'id': c.id,
+                        'text': c.text,
+                        'votes': c.votes,
+                        'percentage': c.percentage,
+                    })
+                return JsonResponse({
+                    'status': 'ok',
+                    'total': poll.total_votes,
+                    'choices': choices_data,
+                })
+
             messages.success(request, "Merci pour votre vote !")
             return redirect(request.META.get('HTTP_REFERER', 'index'))
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'error', 'message': 'Choix invalide.'})
     messages.error(request, "Erreur lors du vote.")
     return redirect('index')
 
@@ -137,6 +124,29 @@ def MediathequePage(request):
         'media_files': media_files,
     }
     return render(request, "mediatheque.html", context)
+
+def AdClick(request, ad_id):
+    ad = get_object_or_404(Advertisement, pk=ad_id)
+    Advertisement.objects.filter(pk=ad_id).update(clicks=F('clicks') + 1)
+    return redirect(ad.url)
+
+
+def NewsletterUnsubscribe(request):
+    from django.utils import timezone as tz
+    email = request.GET.get('email', '')
+    success = False
+    if email:
+        try:
+            sub = Newsletter.objects.get(email=email)
+            if sub.is_active:
+                sub.is_active = False
+                sub.unsubscribed_at = tz.now()
+                sub.save()
+            success = True
+        except Newsletter.DoesNotExist:
+            success = True
+    return render(request, "newsletter_unsubscribe.html", {'success': success, 'email': email})
+
 
 def LoginPage(request):
     return render(request, "login.html")
@@ -157,17 +167,22 @@ def AddComment(request, slug):
         name = request.POST.get('name')
         email = request.POST.get('email')
         content = request.POST.get('content')
-        
+
         if name and email and content:
+            site_settings = SiteSettings.get_settings()
+            status = 'approved' if not site_settings.comment_moderation else 'pending'
             Comment.objects.create(
                 article=article,
                 author_name=name,
                 author_email=email,
                 content=content,
-                status='pending'  # Par défaut en attente
+                status=status,
             )
-            messages.success(request, "Merci ! Votre commentaire est en attente de modération.")
+            if status == 'approved':
+                messages.success(request, "Merci ! Votre commentaire a été publié.")
+            else:
+                messages.success(request, "Merci ! Votre commentaire est en attente de modération.")
         else:
             messages.error(request, "Veuillez remplir tous les champs.")
-            
+
     return redirect('article_detail', slug=slug)

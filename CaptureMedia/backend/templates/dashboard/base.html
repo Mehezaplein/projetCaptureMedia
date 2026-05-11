@@ -74,8 +74,8 @@
       --text: #111111;
       --text2: #555e6d;
       --text3: #9aa0aa;
-      --sidebar-bg: #111111;
-      --sidebar-border: #1e1e1e;
+      --sidebar-bg: #ffffff;
+      --sidebar-border: #e2e5e9;
       --topbar-bg: #ffffff;
       --input-bg: #f8f9fa;
       --badge-bg: #eaecef;
@@ -101,7 +101,7 @@
     /* ─── Sidebar ─────────────────────────────────────── */
     .sidebar {
       width: var(--sidebar-w);
-      min-height: 100vh;
+      height: 100vh;
       background: var(--sidebar-bg);
       border-right: 1px solid var(--sidebar-border);
       display: flex;
@@ -109,14 +109,14 @@
       position: fixed;
       top: 0; left: 0;
       z-index: 100;
-      transition: transform var(--transition), width var(--transition);
+      transition: transform var(--transition), width var(--transition), background var(--transition), border-color var(--transition);
       overflow-y: auto;
       overflow-x: hidden;
     }
 
     .sidebar::-webkit-scrollbar { width: 4px; }
     .sidebar::-webkit-scrollbar-track { background: transparent; }
-    .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
     .sidebar-logo {
       display: flex;
@@ -125,6 +125,11 @@
       padding: 20px 20px 16px;
       border-bottom: 1px solid var(--sidebar-border);
       min-height: var(--topbar-h);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--sidebar-bg);
+      flex-shrink: 0;
     }
 
     .sidebar-logo img {
@@ -166,7 +171,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      color: #444;
+      color: var(--text3);
       padding: 12px 20px 6px;
     }
 
@@ -175,7 +180,7 @@
       align-items: center;
       gap: 10px;
       padding: 10px 20px;
-      color: #888;
+      color: var(--text2);
       font-size: 13.5px;
       font-weight: 500;
       border-radius: 0;
@@ -189,8 +194,8 @@
     }
 
     .nav-item:hover {
-      color: #ddd;
-      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      background: rgba(128,128,128,0.08);
     }
 
     .nav-item.active {
@@ -233,6 +238,10 @@
     .sidebar-footer {
       padding: 16px 20px;
       border-top: 1px solid var(--sidebar-border);
+      position: sticky;
+      bottom: 0;
+      background: var(--sidebar-bg);
+      flex-shrink: 0;
     }
 
     .sidebar-user {
@@ -244,7 +253,7 @@
       transition: background var(--transition);
     }
 
-    .sidebar-user:hover { background: rgba(255,255,255,0.05); }
+    .sidebar-user:hover { background: rgba(128,128,128,0.08); }
 
     .user-avatar {
       width: 34px;
@@ -265,7 +274,7 @@
     .user-info .name {
       font-size: 13px;
       font-weight: 600;
-      color: #ddd;
+      color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -273,7 +282,7 @@
 
     .user-info .role {
       font-size: 11px;
-      color: #555;
+      color: var(--text3);
     }
 
     /* ─── Main Content ────────────────────────────────── */
@@ -1044,6 +1053,11 @@
       <span>Bibliothèque médias</span>
     </a>
 
+    <a href="{% url 'dashboard:media_unused' %}" class="nav-item {% if active_menu == 'media_unused' %}active{% endif %}">
+      <i class="bi bi-trash3"></i>
+      <span>Fichiers inutilisés</span>
+    </a>
+
     <a href="{% url 'dashboard:comments_list' %}" class="nav-item {% if active_menu == 'comments' %}active{% endif %}">
       <i class="bi bi-chat-left-text"></i>
       <span>Commentaires</span>
@@ -1060,6 +1074,16 @@
     <a href="{% url 'dashboard:newsletter_list' %}" class="nav-item {% if active_menu == 'newsletter' %}active{% endif %}">
       <i class="bi bi-envelope-at"></i>
       <span>Newsletter</span>
+    </a>
+
+    <a href="{% url 'dashboard:newsletter_send' %}" class="nav-item {% if active_menu == 'newsletter_send' %}active{% endif %}">
+      <i class="bi bi-send"></i>
+      <span>Envoyer un email</span>
+    </a>
+
+    <a href="{% url 'dashboard:newsletter_history' %}" class="nav-item {% if active_menu == 'newsletter_history' %}active{% endif %}">
+      <i class="bi bi-clock-history"></i>
+      <span>Historique envois</span>
     </a>
 
     <div class="divider"></div>
@@ -1099,7 +1123,7 @@
         <div class="name">{{ request.user.get_full_name|default:request.user.username }}</div>
         <div class="role">{% if request.user.is_superuser %}Super Admin{% elif request.user.is_staff %}Rédacteur{% endif %}</div>
       </div>
-      <i class="bi bi-chevron-right" style="color:#555;font-size:12px;margin-left:auto;"></i>
+      <i class="bi bi-chevron-right" style="color:var(--text3);font-size:12px;margin-left:auto;"></i>
     </a>
   </div>
 </aside>

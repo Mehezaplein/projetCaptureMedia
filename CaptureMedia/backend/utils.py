@@ -29,3 +29,8 @@ def extract_youtube_id(url):
         url
     )
     return match.group(1) if match else None
+
+
+def extract_tiktok_id(url):
+    match = re.search(r'tiktok\.com/@[\w.]+/video/(\d+)', url)
+    return match.group(1) if match else None

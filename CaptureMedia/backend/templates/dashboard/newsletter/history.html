@@ -1,0 +1,74 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Historique des envois{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard:newsletter_list' %}">Newsletter</a> / Historique{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Historique des envois</h1>
+    <p class="page-subtitle">{{ sends.count }} envoi{{ sends.count|pluralize }} au total</p>
+  </div>
+  <a href="{% url 'dashboard:newsletter_send' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Nouvel envoi
+  </a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    {% if sends %}
+    <table>
+      <thead>
+        <tr>
+          <th>Sujet</th>
+          <th>Envoyé par</th>
+          <th>Date</th>
+          <th>Destinataires</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for send in sends %}
+        <tr>
+          <td>
+            <span class="font-bold">{{ send.subject|truncatewords:8 }}</span>
+          </td>
+          <td class="text-sm">{{ send.sent_by.get_full_name|default:send.sent_by.username|default:"—" }}</td>
+          <td class="text-sm">{{ send.sent_at|date:"d M Y H:i" }}</td>
+          <td class="text-sm">{{ send.recipients_count }}</td>
+          <td>
+            {% if send.failed_count == 0 %}
+            <span class="badge badge-success">{{ send.sent_count }} envoyé{{ send.sent_count|pluralize }}</span>
+            {% elif send.sent_count == 0 %}
+            <span class="badge badge-danger">Échec total</span>
+            {% else %}
+            <span class="badge badge-warning">{{ send.sent_count }}/{{ send.recipients_count }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm btn-icon" title="Voir le contenu"
+                    onclick="document.getElementById('preview-{{ send.id }}').classList.toggle('hidden')">
+              <i class="bi bi-eye"></i>
+            </button>
+          </td>
+        </tr>
+        <tr id="preview-{{ send.id }}" class="hidden">
+          <td colspan="6" style="padding:20px;background:var(--surface2);">
+            <div style="max-height:200px;overflow-y:auto;font-size:13px;line-height:1.6;">
+              {{ send.body_html|safe }}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-clock-history"></i>
+      <h3>Aucun envoi</h3>
+      <p>Vous n'avez pas encore envoyé de newsletter.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -11,6 +11,9 @@ urlpatterns = [
     path('mediatheque/', views.MediathequePage, name="mediatheque"),
     path('article/<slug:slug>/comment/', views.AddComment, name="add_comment"),
     
+    path('ad/click/<int:ad_id>/', views.AdClick, name="ad_click"),
+    path('newsletter/unsubscribe/', views.NewsletterUnsubscribe, name="newsletter_unsubscribe"),
+
     path('login/', views.LoginPage, name="login"),
     path('signUp/', views.Sign_upPage, name="signUp"),
     path('contact/', views.ContactPage, name="contact"),

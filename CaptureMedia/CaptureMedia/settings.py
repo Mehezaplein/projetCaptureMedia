@@ -78,6 +78,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Email — remplacer par un vrai SMTP en production
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Pour Gmail : EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'ton_email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'ton_mot_de_passe_app'
+DEFAULT_FROM_EMAIL = 'newsletter@capturemedia.tg'
+
 LOGIN_URL = '/dashboard/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/dashboard/login/'

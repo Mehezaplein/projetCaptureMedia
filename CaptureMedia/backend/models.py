@@ -303,6 +303,24 @@ class PollChoice(models.Model):
         return 0
 
 
+class NewsletterSend(models.Model):
+    subject = models.CharField(max_length=300, verbose_name="Sujet")
+    body_html = models.TextField(verbose_name="Contenu HTML")
+    recipients_count = models.PositiveIntegerField(default=0, verbose_name="Destinataires")
+    sent_count = models.PositiveIntegerField(default=0, verbose_name="Envoyés")
+    failed_count = models.PositiveIntegerField(default=0, verbose_name="Échoués")
+    sent_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Envoi newsletter"
+        verbose_name_plural = "Envois newsletter"
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.subject} ({self.sent_at:%d/%m/%Y})"
+
+
 class SiteSettings(models.Model):
     site_name = models.CharField(max_length=100, default="Capture Media",
                                   verbose_name="Nom du site")
@@ -329,6 +347,16 @@ class SiteSettings(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="Mode maintenance")
     google_analytics_id = models.CharField(max_length=50, blank=True,
                                             verbose_name="Google Analytics ID")
+    # SMTP Configuration
+    smtp_host = models.CharField(max_length=200, blank=True, default='smtp.gmail.com',
+                                  verbose_name="Serveur SMTP")
+    smtp_port = models.PositiveIntegerField(default=587, verbose_name="Port SMTP")
+    smtp_use_tls = models.BooleanField(default=True, verbose_name="Utiliser TLS")
+    smtp_username = models.CharField(max_length=200, blank=True, verbose_name="Nom d'utilisateur SMTP")
+    smtp_password = models.CharField(max_length=200, blank=True, verbose_name="Mot de passe SMTP")
+    smtp_from_email = models.EmailField(blank=True, default='newsletter@capturemedia.tg',
+                                         verbose_name="Email expéditeur")
+    smtp_enabled = models.BooleanField(default=False, verbose_name="Activer l'envoi SMTP")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
