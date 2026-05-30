@@ -41,6 +41,8 @@ urlpatterns = [
 
     # Newsletter
     path('newsletter/', views.newsletter_list, name='newsletter_list'),
+    path('newsletter/envoyer/', views.newsletter_send, name='newsletter_send'),
+    path('newsletter/historique/', views.newsletter_history, name='newsletter_history'),
     path('newsletter/<int:pk>/supprimer/', views.newsletter_delete, name='newsletter_delete'),
 
     # Publicités
@@ -68,6 +70,21 @@ urlpatterns = [
     path('utilisateurs/ajouter/', views.user_add, name='user_add'),
     path('utilisateurs/<int:pk>/modifier/', views.user_edit, name='user_edit'),
     path('utilisateurs/<int:pk>/supprimer/', views.user_delete, name='user_delete'),
+
+    # Dons
+    path('dons/', views.donations_list, name='donations_list'),
+    path('dons/<int:pk>/action/', views.donation_action, name='donation_action'),
+    path('dons/<int:pk>/supprimer/', views.donation_delete, name='donation_delete'),
+    path('dons/canaux/', views.channels_list, name='channels_list'),
+    path('dons/canaux/ajouter/', views.channel_add, name='channel_add'),
+    path('dons/canaux/<int:pk>/modifier/', views.channel_edit, name='channel_edit'),
+    path('dons/canaux/<int:pk>/supprimer/', views.channel_delete, name='channel_delete'),
+    path('dons/canaux/<int:pk>/toggle/', views.channel_toggle, name='channel_toggle'),
+    path('dons/campagnes/', views.campaigns_list, name='campaigns_list'),
+    path('dons/campagnes/ajouter/', views.campaign_add, name='campaign_add'),
+    path('dons/campagnes/<int:pk>/modifier/', views.campaign_edit, name='campaign_edit'),
+    path('dons/campagnes/<int:pk>/supprimer/', views.campaign_delete, name='campaign_delete'),
+    path('dons/campagnes/<int:pk>/toggle/', views.campaign_toggle, name='campaign_toggle'),
 
     # Paramètres & Profil
     path('parametres/', views.settings_view, name='settings'),

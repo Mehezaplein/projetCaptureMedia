@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Désinscription — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<main>
+  <div class="cm-container" style="padding:80px 20px;text-align:center;max-width:500px;margin:0 auto;">
+    {% if success %}
+    <div style="font-size:48px;margin-bottom:20px;">&#10003;</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:16px;">Désinscription confirmée</h1>
+    <p style="color:var(--muted);line-height:1.6;">
+      L'adresse <strong>{{ email }}</strong> a été retirée de notre liste de diffusion.
+      Vous ne recevrez plus de newsletters de notre part.
+    </p>
+    <a href="{% url 'index' %}" class="cm-btn accent" style="margin-top:24px;display:inline-block;">
+      Retour à l'accueil
+    </a>
+    {% else %}
+    <div style="font-size:48px;margin-bottom:20px;">&#9888;</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:16px;">Lien invalide</h1>
+    <p style="color:var(--muted);line-height:1.6;">
+      Ce lien de désinscription semble invalide. Si vous souhaitez vous désinscrire, contactez-nous.
+    </p>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

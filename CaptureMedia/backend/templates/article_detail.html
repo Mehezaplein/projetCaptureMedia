@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static media_tags %}
+
+{% block title %}{{ article.title }} — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<main>
+
+  <!-- Hero image -->
+  {% if article.featured_image %}
+  <div class="cm-article-hero">
+    <img src="{{ article.featured_image.url }}" alt="{{ article.title }}">
+    <div class="cm-article-hero-overlay"></div>
+    <div class="cm-article-hero-content">
+      {% if article.category and article.category.slug %}
+      <a href="{% url 'category_articles' article.category.slug %}" class="cat-tag">{{ article.category.name }}</a>
+      {% endif %}
+      <h1 class="cm-article-hero-title">{{ article.title }}</h1>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="cm-article-body-wrap">
+    <div class="cm-container">
+      <div class="cm-two-col">
+
+        <!-- Article content -->
+        <article>
+          {% if not article.featured_image %}
+          {% if article.category and article.category.slug %}
+          <a href="{% url 'category_articles' article.category.slug %}" class="cat-tag" style="display:inline-block;margin-bottom:14px;">{{ article.category.name }}</a>
+          {% endif %}
+          <h1 style="font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;line-height:1.1;margin-bottom:20px;">
+            {{ article.title }}
+          </h1>
+          {% endif %}
+
+          <!-- Signature / byline -->
+          <div class="cm-byline" style="display:flex;align-items:center;gap:14px;padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#F5C518;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;flex-shrink:0;">
+              {% if article.author %}{{ article.author.get_full_name|default:article.author.username|first|upper }}{% else %}C{% endif %}
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <div style="font-weight:700;color:var(--text);">
+                {% if article.author %}{{ article.author.get_full_name|default:article.author.username }}{% else %}La Rédaction{% endif %}
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:#1b7a3d;background:rgba(56,161,105,.12);padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;">
+                  <i class="ri-verified-badge-fill"></i> Info vérifiée
+                </span>
+              </div>
+              <div style="font-size:.82rem;color:var(--muted);margin-top:2px;">
+                Rédaction {{ site_settings.site_name|default:"CaptureMedia" }}
+              </div>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);text-align:right;line-height:1.7;">
+              <div><i class="ri-calendar-line"></i> {{ article.published_at|date:"d M Y" }} à {{ article.published_at|date:"H:i" }}</div>
+              <div>
+                <i class="ri-time-line"></i> {{ article.reading_time }} min de lecture
+                · <i class="ri-eye-line"></i> {{ article.views_count }} vues
+              </div>
+              {% if article.updated_at and article.updated_at|date:"YmdHi" > article.published_at|date:"YmdHi" %}
+              <div style="font-style:italic;"><i class="ri-refresh-line"></i> Mis à jour le {{ article.updated_at|date:"d M Y à H:i" }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if article.excerpt %}
+          <p style="font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;color:#555;line-height:1.7;margin-bottom:28px;border-left:4px solid #FFCC00;padding-left:20px;">
+            {{ article.excerpt }}
+          </p>
+          {% endif %}
+
+          <!-- Publicité début d'article -->
+          {% include 'partials/ads.html' with position='article_top' %}
+
+          <!-- External media embed -->
+          {% embed_media article %}
+
+          <div class="cm-article-content">
+            {{ article.content|safe }}
+          </div>
+
+          <!-- Tags -->
+          {% if article.tags.exists %}
+          <div class="cm-article-tags">
+            {% for tag in article.tags.all %}
+            <span class="cm-article-tag"># {{ tag.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Partage -->
+          {% with share_url=request.scheme|add:"://"|add:request.get_host|add:request.get_full_path %}
+          <div class="cm-share" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:28px 0;padding:18px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+            <span style="font-weight:700;font-size:.9rem;color:var(--text);"><i class="ri-share-line"></i> Partager cet article</span>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" target="_blank" rel="noopener" title="Partager sur Facebook"
+               style="width:38px;height:38px;border-radius:50%;background:#1877f2;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;"><i class="ri-facebook-fill"></i></a>
+            <a href="https://twitter.com/intent/tweet?url={{ share_url|urlencode }}&text={{ article.title|urlencode }}" target="_blank" rel="noopener" title="Partager sur X"
+               style="width:38px;height:38px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;"><i class="ri-twitter-x-fill"></i></a>
+            <a href="https://wa.me/?text={{ article.title|urlencode }}%20{{ share_url|urlencode }}" target="_blank" rel="noopener" title="Partager sur WhatsApp"
+               style="width:38px;height:38px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;"><i class="ri-whatsapp-fill"></i></a>
+            <button type="button" onclick="cmCopyLink(this,'{{ share_url|escapejs }}')" title="Copier le lien"
+               style="width:38px;height:38px;border-radius:50%;background:var(--surface2,#eee);color:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="ri-link"></i></button>
+          </div>
+          {% endwith %}
+
+          <!-- Publicité fin d'article -->
+          {% include 'partials/ads.html' with position='article_bottom' %}
+
+          <!-- Related articles -->
+          <div style="margin-top:52px;">
+            <div class="cm-section-label accent">
+              <h4>À lire aussi</h4>
+            </div>
+            <div class="cm-related-grid">
+              {% for related in related_articles|default:global_suggestions|slice:":3" %}
+              {% if related.featured_image %}
+              <a href="{% url 'article_detail' related.slug %}" class="cm-article-card" style="text-decoration:none;">
+                <div class="cm-article-card-thumb">
+                  <img src="{{ related.featured_image.url }}" alt="{{ related.title }}">
+                </div>
+                <div class="cm-article-card-body">
+                  <span class="cm-article-card-title">{{ related.title|truncatewords:8 }}</span>
+                  <div class="cm-article-card-meta">{{ related.published_at|date:"d M Y" }}</div>
+                </div>
+              </a>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Comments -->
+          {% if comments_enabled %}
+          <div class="cm-comments-section">
+            <div class="cm-section-label accent">
+              <h4>Commentaires ({{ comments.count }})</h4>
+            </div>
+
+            {% for comment in comments %}
+            <div class="cm-comment">
+              <div class="cm-comment-header">
+                <span class="cm-comment-author">{{ comment.author_name }}</span>
+                <span class="cm-comment-date">{{ comment.created_at|date:"d M Y" }}</span>
+              </div>
+              <p class="cm-comment-content">{{ comment.content }}</p>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-size:.9rem;padding:20px 0;">Soyez le premier à commenter.</p>
+            {% endfor %}
+
+            <div class="cm-comment-form">
+              <h4>Laisser un commentaire</h4>
+              <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px;">
+                Votre commentaire sera visible après modération.
+              </p>
+              <form action="{% url 'add_comment' article.slug %}" method="post">
+                {% csrf_token %}
+                <div class="cm-form-grid">
+                  <div>
+                    <label class="cm-form-label">Nom *</label>
+                    <input type="text" name="name" class="cm-form-input" placeholder="Votre nom" required>
+                  </div>
+                  <div>
+                    <label class="cm-form-label">Email *</label>
+                    <input type="email" name="email" class="cm-form-input" placeholder="votre@email.com" required>
+                  </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                  <label class="cm-form-label">Message *</label>
+                  <textarea name="content" class="cm-form-input" rows="4" placeholder="Votre commentaire…" required></textarea>
+                </div>
+                <button type="submit" class="cm-btn accent">Envoyer le commentaire</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </article>
+
+        <!-- Sidebar -->
+        <aside class="cm-sidebar">
+          {% include 'partials/ads.html' with position='sidebar_top' %}
+
+          <div class="cm-widget">
+            <div class="cm-section-label accent">
+              <h5>Dans la même catégorie</h5>
+            </div>
+            {% for sug in related_articles|default:global_suggestions %}
+            <a href="{% url 'article_detail' sug.slug %}" class="cm-most-read-item" style="text-decoration:none;">
+              <span class="cm-most-read-num">0{{ forloop.counter }}</span>
+              <span class="cm-most-read-title">{{ sug.title|truncatewords:10 }}</span>
+            </a>
+            {% endfor %}
+          </div>
+
+          <div class="cm-newsletter-widget">
+            <h4>Newsletter</h4>
+            <p>Recevez nos prochains articles directement dans votre boîte mail.</p>
+            <form action="{% url 'newsletter_signup' %}" method="post">
+              {% csrf_token %}
+              <input type="email" name="email" placeholder="votre@email.com" required>
+              <button type="submit">S'abonner →</button>
+            </form>
+          </div>
+
+          {% include 'partials/ads.html' with position='sidebar_bottom' %}
+
+          {% include 'partials/sidebar_polls.html' %}
+        </aside>
+
+      </div>
+    </div>
+  </div>
+
+  {% include 'partials/ads.html' with position='popup' %}
+</main>
+
+<script>
+  function cmCopyLink(btn, url){
+    navigator.clipboard.writeText(url).then(function(){
+      var old = btn.innerHTML;
+      btn.innerHTML = '<i class="ri-check-line"></i>';
+      setTimeout(function(){ btn.innerHTML = old; }, 1600);
+    });
+  }
+</script>
+{% endblock %}

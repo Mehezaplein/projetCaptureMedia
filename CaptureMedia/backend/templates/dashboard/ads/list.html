@@ -3,16 +3,112 @@
 {% block title %}Publicités{% endblock %}
 {% block breadcrumb %}Gestion des publicités{% endblock %}
 
+{% block extra_head %}
+<style>
+  .ad-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .ad-stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .ad-stat-card .stat-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .ad-stat-card .stat-label {
+    font-size: .75rem;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .ad-stat-card.empty { opacity: 0.5; }
+  .ad-format-guide {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .ad-format-guide h4 {
+    margin: 0 0 12px;
+    font-size: .9rem;
+    color: var(--text2);
+  }
+  .format-table { width: 100%; font-size: .82rem; }
+  .format-table th { color: var(--text3); font-weight: 500; text-align: left; padding: 6px 10px; }
+  .format-table td { padding: 6px 10px; border-top: 1px solid var(--border); }
+  .format-table .dim { font-family: monospace; color: var(--primary); font-weight: 600; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div class="page-header-left">
     <h1 class="page-title">Publicités</h1>
-    <p class="page-subtitle">Gérer les annonces publicitaires</p>
+    <p class="page-subtitle">Gérer les annonces publicitaires du site</p>
   </div>
   <a href="{% url 'dashboard:ad_add' %}" class="btn btn-primary">
     <i class="bi bi-plus-lg"></i>
     Ajouter une publicité
   </a>
+</div>
+
+<!-- Résumé par position -->
+<div class="ad-stats-grid">
+  <div class="ad-stat-card {% if not stats.header %}empty{% endif %}">
+    <div class="stat-count">{{ stats.header|default:"0" }}</div>
+    <div class="stat-label">En-tête</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.sidebar_top %}empty{% endif %}">
+    <div class="stat-count">{{ stats.sidebar_top|default:"0" }}</div>
+    <div class="stat-label">Sidebar haut</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.sidebar_bottom %}empty{% endif %}">
+    <div class="stat-count">{{ stats.sidebar_bottom|default:"0" }}</div>
+    <div class="stat-label">Sidebar bas</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.article_top %}empty{% endif %}">
+    <div class="stat-count">{{ stats.article_top|default:"0" }}</div>
+    <div class="stat-label">Début article</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.article_bottom %}empty{% endif %}">
+    <div class="stat-count">{{ stats.article_bottom|default:"0" }}</div>
+    <div class="stat-label">Fin article</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.footer %}empty{% endif %}">
+    <div class="stat-count">{{ stats.footer|default:"0" }}</div>
+    <div class="stat-label">Pied de page</div>
+  </div>
+  <div class="ad-stat-card {% if not stats.popup %}empty{% endif %}">
+    <div class="stat-count">{{ stats.popup|default:"0" }}</div>
+    <div class="stat-label">Pop-up</div>
+  </div>
+</div>
+
+<!-- Guide des formats -->
+<div class="ad-format-guide">
+  <h4><i class="bi bi-aspect-ratio"></i> Formats d'images recommandés par position</h4>
+  <table class="format-table">
+    <thead>
+      <tr><th>Position</th><th>Dimensions</th><th>Poids max</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>En-tête</td><td class="dim">728×90 ou 970×90 px</td><td>150 Ko</td></tr>
+      <tr><td>Sidebar haut</td><td class="dim">300×250 ou 300×600 px</td><td>200 Ko</td></tr>
+      <tr><td>Sidebar bas</td><td class="dim">300×250 px</td><td>200 Ko</td></tr>
+      <tr><td>Début d'article</td><td class="dim">728×90 ou 468×60 px</td><td>150 Ko</td></tr>
+      <tr><td>Fin d'article</td><td class="dim">728×90 ou 970×250 px</td><td>200 Ko</td></tr>
+      <tr><td>Pied de page</td><td class="dim">728×90 px</td><td>150 Ko</td></tr>
+      <tr><td>Pop-up</td><td class="dim">480×480 ou 480×600 px</td><td>300 Ko</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="card">
@@ -21,11 +117,11 @@
       <table>
         <thead>
           <tr>
-            <th>Titre</th>
+            <th>Publicité</th>
             <th>Position</th>
             <th>Dates</th>
             <th>Statut</th>
-            <th style="width:150px;">Actions</th>
+            <th style="width:120px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -43,10 +139,4 @@
     {% endif %}
   </div>
 </div>
-
-<script>
-  document.addEventListener('htmx:config:init:request', function(e) {
-    e.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-  });
-</script>
 {% endblock %}

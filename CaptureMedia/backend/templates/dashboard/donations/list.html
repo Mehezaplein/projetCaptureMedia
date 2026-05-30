@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Dons reçus{% endblock %}
+{% block breadcrumb %}Dons reçus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title"><i class="bi bi-heart-fill text-yellow"></i> Dons reçus</h1>
+    <p class="page-subtitle">Soutiens financiers et matériels du public</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'dashboard:campaigns_list' %}" class="btn btn-secondary"><i class="bi bi-bullseye"></i> Campagnes</a>
+    <a href="{% url 'dashboard:channels_list' %}" class="btn btn-secondary"><i class="bi bi-wallet2"></i> Canaux</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+    <div class="stat-value">{{ stats.total_collected|floatformat:0 }}</div>
+    <div class="stat-label">FCFA collectés (confirmés)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="bi bi-people"></i></div>
+    <div class="stat-value">{{ stats.confirmed }}</div>
+    <div class="stat-label">Dons confirmés</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+    <div class="stat-value">{{ stats.pending }}</div>
+    <div class="stat-label">En attente</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="bi bi-gift"></i></div>
+    <div class="stat-value">{{ stats.material }}</div>
+    <div class="stat-label">Dons matériels</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-row" id="filters-form">
+  <div class="search-bar">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un donateur…"
+           hx-get="{% url 'dashboard:donations_list' %}" hx-trigger="keyup changed delay:400ms"
+           hx-target="#donations-table" hx-include="#filters-form" hx-indicator="#search-spinner" />
+    <span class="htmx-indicator" id="search-spinner"></span>
+  </div>
+  <select name="type" class="filter-select" hx-get="{% url 'dashboard:donations_list' %}"
+          hx-trigger="change" hx-target="#donations-table" hx-include="#filters-form">
+    <option value="">Tous les types</option>
+    <option value="financial" {% if type_filter == 'financial' %}selected{% endif %}>Financier</option>
+    <option value="material" {% if type_filter == 'material' %}selected{% endif %}>Matériel</option>
+  </select>
+  <select name="status" class="filter-select" hx-get="{% url 'dashboard:donations_list' %}"
+          hx-trigger="change" hx-target="#donations-table" hx-include="#filters-form">
+    <option value="">Tous les statuts</option>
+    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
+    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmés</option>
+    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejetés</option>
+  </select>
+</div>
+
+<div class="card">
+  <div id="donations-table">
+    {% include 'dashboard/donations/_table.html' %}
+  </div>
+</div>
+{% endblock %}

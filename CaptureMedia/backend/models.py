@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
+from .utils import detect_media_platform
 
 
 class Category(models.Model):
@@ -58,6 +59,16 @@ class Article(models.Model):
         ('archived', 'Archivé'),
     ]
 
+    PLATFORM_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('tiktok', 'TikTok'),
+        ('instagram', 'Instagram'),
+        ('twitter', 'Twitter / X'),
+        ('facebook', 'Facebook'),
+        ('whatsapp', 'WhatsApp'),
+        ('other', 'Autre'),
+    ]
+
     title = models.CharField(max_length=300, verbose_name="Titre")
     slug = models.SlugField(unique=True, blank=True, max_length=350)
     excerpt = models.TextField(blank=True, verbose_name="Résumé", max_length=500)
@@ -69,6 +80,9 @@ class Article(models.Model):
                                 related_name='articles', verbose_name="Auteur")
     featured_image = models.ImageField(upload_to='articles/', blank=True, null=True,
                                         verbose_name="Image à la une")
+    media_url = models.URLField(blank=True, null=True, verbose_name="URL du média externe")
+    media_platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, blank=True,
+                                       verbose_name="Plateforme")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft',
                                verbose_name="Statut")
     is_featured = models.BooleanField(default=False, verbose_name="À la une")
@@ -98,7 +112,16 @@ class Article(models.Model):
             self.slug = slug
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
+        self.media_platform = detect_media_platform(self.media_url or '')
         super().save(*args, **kwargs)
+
+    @property
+    def reading_time(self):
+        """Temps de lecture estimé en minutes (~200 mots/min)."""
+        import re
+        text = re.sub(r'<[^>]+>', '', self.content or '')
+        words = len(text.split())
+        return max(1, round(words / 200))
 
     @property
     def comments_count(self):
@@ -288,6 +311,166 @@ class PollChoice(models.Model):
         return 0
 
 
+class NewsletterSend(models.Model):
+    subject = models.CharField(max_length=300, verbose_name="Sujet")
+    body_html = models.TextField(verbose_name="Contenu HTML")
+    recipients_count = models.PositiveIntegerField(default=0, verbose_name="Destinataires")
+    sent_count = models.PositiveIntegerField(default=0, verbose_name="Envoyés")
+    failed_count = models.PositiveIntegerField(default=0, verbose_name="Échoués")
+    sent_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Envoi newsletter"
+        verbose_name_plural = "Envois newsletter"
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.subject} ({self.sent_at:%d/%m/%Y})"
+
+
+class DonationChannel(models.Model):
+    """Canal de don configuré par l'admin (Mobile Money, banque, PayPal…)."""
+    TYPE_CHOICES = [
+        ('mobile_money', 'Mobile Money'),
+        ('bank', 'Virement bancaire'),
+        ('paypal', 'PayPal'),
+        ('card', 'Carte bancaire'),
+        ('other', 'Autre'),
+    ]
+
+    name = models.CharField(max_length=120, verbose_name="Nom du canal")
+    channel_type = models.CharField(max_length=20, choices=TYPE_CHOICES,
+                                    default='mobile_money', verbose_name="Type")
+    account_number = models.CharField(max_length=120, blank=True,
+                                      verbose_name="Numéro / IBAN / identifiant")
+    account_name = models.CharField(max_length=120, blank=True,
+                                    verbose_name="Intitulé du compte")
+    ussd_code = models.CharField(max_length=40, blank=True,
+                                 verbose_name="Code USSD (ex : *155#)")
+    instructions = models.TextField(blank=True, verbose_name="Instructions")
+    logo = models.ImageField(upload_to='donations/channels/', blank=True, null=True,
+                             verbose_name="Logo")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordre")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Canal de don"
+        verbose_name_plural = "Canaux de don"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class DonationCampaign(models.Model):
+    """Campagne de collecte avec objectif (thermomètre)."""
+    title = models.CharField(max_length=200, verbose_name="Titre")
+    slug = models.SlugField(unique=True, blank=True, max_length=220)
+    description = models.TextField(blank=True, verbose_name="Description")
+    cover_image = models.ImageField(upload_to='donations/campaigns/', blank=True, null=True,
+                                    verbose_name="Image de couverture")
+    goal_amount = models.PositiveIntegerField(default=0,
+                                              verbose_name="Objectif (FCFA)")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créée le")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Se termine le")
+
+    class Meta:
+        verbose_name = "Campagne de dons"
+        verbose_name_plural = "Campagnes de dons"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+            while DonationCampaign.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def collected_amount(self):
+        from django.db.models import Sum
+        agg = self.donations.filter(donation_type='financial', status='confirmed').aggregate(
+            total=Sum('amount'))
+        return agg['total'] or 0
+
+    @property
+    def donors_count(self):
+        return self.donations.filter(status='confirmed').count()
+
+    @property
+    def progress_percentage(self):
+        if self.goal_amount and self.goal_amount > 0:
+            return min(round(self.collected_amount / self.goal_amount * 100), 100)
+        return 0
+
+
+class Donation(models.Model):
+    """Un don (financier ou matériel) fait par un membre du public."""
+    TYPE_CHOICES = [
+        ('financial', 'Financier'),
+        ('material', 'Matériel'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'En attente'),
+        ('confirmed', 'Confirmé'),
+        ('rejected', 'Rejeté'),
+    ]
+
+    donation_type = models.CharField(max_length=20, choices=TYPE_CHOICES,
+                                     default='financial', verbose_name="Type de don")
+    campaign = models.ForeignKey(DonationCampaign, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='donations', verbose_name="Campagne")
+
+    donor_name = models.CharField(max_length=120, verbose_name="Nom du donateur")
+    donor_email = models.EmailField(blank=True, verbose_name="Email")
+    donor_phone = models.CharField(max_length=30, blank=True, verbose_name="Téléphone")
+    is_anonymous = models.BooleanField(default=False, verbose_name="Don anonyme")
+
+    # Don financier
+    amount = models.PositiveIntegerField(null=True, blank=True, verbose_name="Montant (FCFA)")
+    currency = models.CharField(max_length=10, default='FCFA', verbose_name="Devise")
+    channel = models.ForeignKey(DonationChannel, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='donations', verbose_name="Canal utilisé")
+    transaction_reference = models.CharField(max_length=120, blank=True,
+                                             verbose_name="Référence transaction")
+
+    # Don matériel
+    item_description = models.TextField(blank=True, verbose_name="Description du matériel")
+    estimated_value = models.PositiveIntegerField(null=True, blank=True,
+                                                  verbose_name="Valeur estimée (FCFA)")
+
+    message = models.TextField(blank=True, verbose_name="Mot de soutien")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending',
+                              verbose_name="Statut")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Reçu le")
+    confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="Confirmé le")
+
+    class Meta:
+        verbose_name = "Don"
+        verbose_name_plural = "Dons"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        who = "Anonyme" if self.is_anonymous else self.donor_name
+        if self.donation_type == 'financial':
+            return f"{who} — {self.amount or 0} {self.currency}"
+        return f"{who} — don matériel"
+
+    @property
+    def public_name(self):
+        return "Un anonyme" if self.is_anonymous else self.donor_name
+
+
 class SiteSettings(models.Model):
     site_name = models.CharField(max_length=100, default="Capture Media",
                                   verbose_name="Nom du site")
@@ -314,6 +497,25 @@ class SiteSettings(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="Mode maintenance")
     google_analytics_id = models.CharField(max_length=50, blank=True,
                                             verbose_name="Google Analytics ID")
+    # SMTP Configuration
+    smtp_host = models.CharField(max_length=200, blank=True, default='smtp.gmail.com',
+                                  verbose_name="Serveur SMTP")
+    smtp_port = models.PositiveIntegerField(default=587, verbose_name="Port SMTP")
+    smtp_use_tls = models.BooleanField(default=True, verbose_name="Utiliser TLS")
+    smtp_username = models.CharField(max_length=200, blank=True, verbose_name="Nom d'utilisateur SMTP")
+    smtp_password = models.CharField(max_length=200, blank=True, verbose_name="Mot de passe SMTP")
+    smtp_from_email = models.EmailField(blank=True, default='newsletter@capturemedia.tg',
+                                         verbose_name="Email expéditeur")
+    smtp_enabled = models.BooleanField(default=False, verbose_name="Activer l'envoi SMTP")
+    # Dons / Soutien
+    donations_enabled = models.BooleanField(default=True, verbose_name="Activer la page de dons")
+    donation_headline = models.CharField(max_length=200, blank=True,
+                                         default="Le média du peuple, soutenu par le peuple",
+                                         verbose_name="Titre de la page de dons")
+    donation_message = models.TextField(blank=True,
+                                        default="Capture Media informe librement et gratuitement le peuple togolais. "
+                                                "Votre soutien, même modeste, garantit notre indépendance et notre liberté de ton.",
+                                        verbose_name="Message d'appel aux dons")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -1,0 +1,50 @@
+
+#a1 {
+    color: black;
+    background-color: rgb(82, 194, 82);
+    border: 1px solid #52d77a;
+    /* Bordure verte */
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    padding: 5px 10px;
+    padding-left: 0px;
+    text-decoration: none;
+    width: 96px;
+    margin-top: 5px;
+    display: inline-block;
+    margin-left: 40px;
+    
+}
+
+#a1:hover {
+    font-size: 15px;
+    text-decoration: none;
+    color: white;
+    width: 98px;
+}
+
+#a2{
+    color: black;
+    background-color: rgb(208, 31, 31);
+    border: 1px solid #ea2929;
+    /* Bordure rouge */
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    margin-top: 5px;
+    padding: 5px 10px;
+    width: 96px;
+    text-decoration: none;
+    display: inline-block;
+    /* Pour que la bordure entoure le lien */
+    margin-bottom: 5px;
+    margin-left: 10px;
+}
+
+#a2:hover {
+    font-size: 15px;
+    text-decoration: none;
+    width: 98px;
+    color: white;
+}

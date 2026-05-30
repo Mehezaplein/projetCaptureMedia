@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static media_tags %}
+
+{% block title %}Vidéos & Reportages — {{ site_settings.site_name|default:"CaptureMedia" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .vid-head{background:linear-gradient(135deg,#111,#1c1c1c);color:#fff;padding:40px 0 28px}
+  .vid-head h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;margin-bottom:8px}
+  .vid-head p{color:rgba(255,255,255,.7);font-size:.98rem}
+  .vid-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+  .vid-chip{padding:8px 16px;border-radius:30px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8);
+            text-decoration:none;font-size:.85rem;font-weight:600;transition:.2s}
+  .vid-chip:hover{border-color:#F5C518;color:#F5C518}
+  .vid-chip.active{background:#F5C518;color:#111;border-color:#F5C518}
+
+  .vid-wrap{padding:28px 0 56px}
+  .vid-feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:24px}
+  .vid-card{background:#fff;border:1px solid #eee;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .vid-media{background:#000}
+  .vid-media .embed-media{margin:0!important;border-radius:0!important}
+  .vid-info{padding:16px 18px;flex:1}
+  .vid-cat{display:inline-block;background:#F5C518;color:#111;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+  .vid-title{font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem;line-height:1.25;color:#111;text-decoration:none;display:block}
+  .vid-title:hover{color:#000}
+  .vid-meta{font-size:.78rem;color:#888;margin-top:8px;display:flex;gap:10px;align-items:center}
+  .vid-actions{display:flex;gap:8px;align-items:center;padding:0 18px 16px}
+  .vid-actions .lbl{font-size:.78rem;color:#999;font-weight:600;margin-right:2px}
+  .vid-sh{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;border:none;cursor:pointer;font-size:1rem}
+  .vid-sh.fb{background:#1877f2}.vid-sh.x{background:#111}.vid-sh.wa{background:#25d366}.vid-sh.cp{background:#e9e9e9;color:#333}
+
+  /* ── Mobile : scroller vertical type TikTok ── */
+  @media(max-width:768px){
+    .vid-head{padding:18px 0 14px}
+    .vid-head h1{font-size:1.4rem}
+    .vid-wrap{padding:0}
+    .vid-feed{display:block;height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;
+              -webkit-overflow-scrolling:touch;background:#000;scrollbar-width:none}
+    .vid-feed::-webkit-scrollbar{display:none}
+    .vid-card{height:100dvh;scroll-snap-align:start;border:none;border-radius:0;background:#000;
+              position:relative;justify-content:center}
+    .vid-media{display:flex;align-items:center;justify-content:center;width:100%}
+    .vid-media .embed-media{width:100%}
+    /* Infos en superposition bas */
+    .vid-info{position:absolute;left:0;right:64px;bottom:24px;padding:16px;z-index:3;
+              background:linear-gradient(transparent,rgba(0,0,0,.75));}
+    .vid-title{color:#fff}
+    .vid-meta{color:rgba(255,255,255,.75)}
+    /* Barre d'actions verticale à droite (style TikTok) */
+    .vid-actions{position:absolute;right:10px;bottom:90px;flex-direction:column;gap:14px;padding:0;z-index:4}
+    .vid-actions .lbl{display:none}
+    .vid-sh{width:46px;height:46px;font-size:1.3rem;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+    .vid-sh.cp{background:rgba(255,255,255,.9);color:#111}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <!-- En-tête -->
+  <div class="vid-head">
+    <div class="cm-container">
+      <h1>Vidéos &amp; Reportages</h1>
+      <p>Tous nos contenus vidéo, en direct des réseaux.</p>
+      {% if available_platforms %}
+      <div class="vid-filters">
+        <a href="{% url 'videos' %}" class="vid-chip {% if not platform %}active{% endif %}">Tout</a>
+        {% for p in available_platforms %}
+        <a href="?platform={{ p }}" class="vid-chip {% if platform == p %}active{% endif %}">{{ platform_labels|dict_get:p }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="vid-wrap">
+    <div class="cm-container">
+      {% if videos %}
+      <div class="vid-feed">
+        {% for v in videos %}
+        {% with art_url=request.scheme|add:"://"|add:request.get_host|add:"/article/"|add:v.slug|add:"/" %}
+        <article class="vid-card">
+          <div class="vid-media">{% embed_media v %}</div>
+          <div class="vid-info">
+            {% if v.category %}<a href="{% url 'category_articles' v.category.slug %}" class="vid-cat">{{ v.category.name }}</a>{% endif %}
+            <a href="{% url 'article_detail' v.slug %}" class="vid-title">{{ v.title }}</a>
+            <div class="vid-meta">
+              <span>{{ v.published_at|date:"d M Y" }}</span>
+              <span><i class="ri-eye-line"></i> {{ v.views_count }}</span>
+            </div>
+          </div>
+          <div class="vid-actions">
+            <span class="lbl">Partager</span>
+            <a class="vid-sh fb" target="_blank" rel="noopener" title="Facebook"
+               href="https://www.facebook.com/sharer/sharer.php?u={{ art_url|urlencode }}"><i class="ri-facebook-fill"></i></a>
+            <a class="vid-sh x" target="_blank" rel="noopener" title="X"
+               href="https://twitter.com/intent/tweet?url={{ art_url|urlencode }}&text={{ v.title|urlencode }}"><i class="ri-twitter-x-fill"></i></a>
+            <a class="vid-sh wa" target="_blank" rel="noopener" title="WhatsApp"
+               href="https://wa.me/?text={{ v.title|urlencode }}%20{{ art_url|urlencode }}"><i class="ri-whatsapp-fill"></i></a>
+            <button class="vid-sh cp" title="Copier le lien" onclick="vidCopy(this,'{{ art_url|escapejs }}')"><i class="ri-link"></i></button>
+          </div>
+        </article>
+        {% endwith %}
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages %}
+      <div class="cm-pagination" style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:40px;flex-wrap:wrap;">
+        {% if page_obj.has_previous %}
+        <a href="?{% if platform %}platform={{ platform }}&{% endif %}page={{ page_obj.previous_page_number }}" class="cm-btn" style="padding:8px 14px;">← Précédent</a>
+        {% endif %}
+        <span style="color:var(--muted);font-size:.9rem;">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?{% if platform %}platform={{ platform }}&{% endif %}page={{ page_obj.next_page_number }}" class="cm-btn" style="padding:8px 14px;">Suivant →</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% else %}
+      <div class="cm-empty">
+        <h3>Aucune vidéo pour le moment</h3>
+        <p>Les reportages vidéo publiés apparaîtront ici.</p>
+        <a href="{% url 'index' %}" class="cm-btn" style="margin-top:20px;display:inline-flex;">← Retour à l'accueil</a>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</main>
+
+<script>
+  function vidCopy(btn, url){
+    navigator.clipboard.writeText(url).then(function(){
+      var old = btn.innerHTML; btn.innerHTML = '<i class="ri-check-line"></i>';
+      setTimeout(function(){ btn.innerHTML = old; }, 1600);
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}Modifier un canal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:channels_list' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+
+<div class="card" style="max-width:760px;">
+  <div class="card-body">
+    <form action="{% url 'dashboard:channel_edit' channel.pk %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Nom <span class="required">*</span></label>
+          <input type="text" name="name" class="form-control" required value="{{ channel.name }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select name="channel_type" class="form-select">
+            {% for val, label in types %}<option value="{{ val }}" {% if channel.channel_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro / IBAN / identifiant</label>
+          <input type="text" name="account_number" class="form-control" value="{{ channel.account_number }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Intitulé du compte</label>
+          <input type="text" name="account_name" class="form-control" value="{{ channel.account_name }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Code USSD</label>
+          <input type="text" name="ussd_code" class="form-control" value="{{ channel.ussd_code }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ordre</label>
+          <input type="number" name="order" class="form-control" value="{{ channel.order }}" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Instructions</label>
+        <textarea name="instructions" class="form-control" rows="2">{{ channel.instructions }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo</label>
+        {% if channel.logo %}<div style="margin-bottom:8px;"><img src="{{ channel.logo.url }}" style="height:48px;border-radius:8px;"></div>{% endif %}
+        <input type="file" name="logo" class="form-control" accept="image/*" />
+      </div>
+      <label class="form-check" style="margin-bottom:20px;"><input type="checkbox" name="is_active" {% if channel.is_active %}checked{% endif %}> <span class="form-check-label">Actif</span></label>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+        <a href="{% url 'dashboard:channels_list' %}" class="btn btn-ghost">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

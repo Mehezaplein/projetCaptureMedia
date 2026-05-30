@@ -28,6 +28,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'backend.middleware.MaintenanceModeMiddleware',
 ]
 
 ROOT_URLCONF = 'CaptureMedia.urls'
@@ -77,6 +78,20 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Envoie l'origine (pas l'URL complète) aux domaines tiers → nécessaire pour les
+# embeds YouTube/TikTok/etc. ('same-origin' par défaut bloque le Referer → erreur 153)
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Email — remplacer par un vrai SMTP en production
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Pour Gmail : EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'ton_email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'ton_mot_de_passe_app'
+DEFAULT_FROM_EMAIL = 'newsletter@capturemedia.tg'
 
 LOGIN_URL = '/dashboard/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'

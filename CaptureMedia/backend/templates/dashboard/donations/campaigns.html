@@ -1,0 +1,62 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Campagnes de dons{% endblock %}
+{% block breadcrumb %}Campagnes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title"><i class="bi bi-bullseye text-yellow"></i> Campagnes de dons</h1>
+    <p class="page-subtitle">Objectifs de collecte affichés en thermomètre sur la page de soutien</p>
+  </div>
+  <a href="{% url 'dashboard:campaign_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouvelle campagne</a>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Campagne</th><th>Objectif</th><th>Collecté</th><th>Progression</th><th>Statut</th><th style="width:120px;">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for c in campaigns %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              {% if c.cover_image %}<img src="{{ c.cover_image.url }}" class="img-preview">{% endif %}
+              <div>
+                <div style="font-weight:600;">{{ c.title }}</div>
+                {% if c.expires_at %}<div class="text-sm text-dim">Jusqu'au {{ c.expires_at|date:"d/m/Y" }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><strong>{{ c.goal_amount|floatformat:0 }}</strong> FCFA</td>
+          <td>{{ c.collected_amount|floatformat:0 }} FCFA<div class="text-sm text-dim">{{ c.donors_count }} donateur{{ c.donors_count|pluralize }}</div></td>
+          <td style="min-width:140px;">
+            <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:{{ c.progress_percentage }}%;"></div></div>
+            <div class="text-sm text-dim" style="margin-top:4px;">{{ c.progress_percentage }}%</div>
+          </td>
+          <td>{% if c.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <form action="{% url 'dashboard:campaign_toggle' c.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-icon btn-sm {% if c.is_active %}btn-success{% else %}btn-ghost{% endif %}" title="Activer/Désactiver">
+                  <i class="bi bi-{% if c.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+                </button>
+              </form>
+              <a href="{% url 'dashboard:campaign_edit' c.pk %}" class="btn btn-icon btn-sm btn-secondary" title="Modifier"><i class="bi bi-pencil"></i></a>
+              <form hx-post="{% url 'dashboard:campaign_delete' c.pk %}" hx-target="closest tr" hx-swap="outerHTML swap:0.2s" hx-confirm="Supprimer cette campagne ?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Supprimer"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-bullseye"></i><h3>Aucune campagne</h3><p>Créez une campagne pour afficher un objectif de collecte sur la page de dons.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% comment %}
+  Usage: {% include 'partials/ads.html' with position='header' %}
+  Positions: header, sidebar_top, sidebar_bottom, article_top, article_bottom, footer, popup
+{% endcomment %}
+
+{% if position == 'header' and ads_header %}
+<div class="cm-ad cm-ad-header">
+  <div class="cm-container-fluid" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:12px 24px;">
+    {% for ad in ads_header %}
+    <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+      <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+    </a>
+    {% endfor %}
+  </div>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endif %}
+
+{% if position == 'sidebar_top' and ads_sidebar_top %}
+{% for ad in ads_sidebar_top %}
+<div class="cm-ad cm-ad-sidebar">
+  <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+  </a>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if position == 'sidebar_bottom' and ads_sidebar_bottom %}
+{% for ad in ads_sidebar_bottom %}
+<div class="cm-ad cm-ad-sidebar">
+  <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+  </a>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if position == 'article_top' and ads_article_top %}
+{% for ad in ads_article_top %}
+<div class="cm-ad cm-ad-inline">
+  <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+  </a>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if position == 'article_bottom' and ads_article_bottom %}
+{% for ad in ads_article_bottom %}
+<div class="cm-ad cm-ad-inline">
+  <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+  </a>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if position == 'footer' and ads_footer %}
+<div class="cm-ad cm-ad-footer">
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    {% for ad in ads_footer %}
+    <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer" class="cm-ad-link">
+      <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+    </a>
+    {% endfor %}
+  </div>
+  <span class="cm-ad-label">Publicité</span>
+</div>
+{% endif %}
+
+{% if position == 'popup' and ads_popup %}
+{% for ad in ads_popup %}
+<div class="cm-ad-popup" id="cm-ad-popup">
+  <div class="cm-ad-popup-inner">
+    <button class="cm-ad-popup-close" onclick="document.getElementById('cm-ad-popup').remove()">×</button>
+    <a href="{% url 'ad_click' ad.id %}" target="_blank" rel="noopener noreferrer">
+      <img src="{{ ad.image.url }}" alt="{{ ad.title }}" loading="lazy" />
+    </a>
+    <span class="cm-ad-label">Publicité</span>
+  </div>
+</div>
+{% endfor %}
+{% endif %}

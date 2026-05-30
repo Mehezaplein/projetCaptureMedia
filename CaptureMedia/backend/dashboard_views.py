@@ -13,7 +13,8 @@ from datetime import timedelta
 
 from .models import (
     Article, Category, Tag, Comment, MediaFile,
-    Newsletter, Advertisement, BreakingNews, Poll, PollChoice, SiteSettings
+    Newsletter, NewsletterSend, Advertisement, BreakingNews, Poll, PollChoice, SiteSettings,
+    DonationChannel, DonationCampaign, Donation
 )
 
 
@@ -150,6 +151,13 @@ def article_add(request):
             )
             if 'featured_image' in request.FILES:
                 article.featured_image = request.FILES['featured_image']
+            else:
+                lib_id = request.POST.get('library_image_id')
+                if lib_id:
+                    mf = MediaFile.objects.filter(pk=lib_id, file_type='image').first()
+                    if mf:
+                        article.featured_image = mf.file.name
+            article.media_url = request.POST.get('media_url', '').strip() or None
             article.save()
 
             # Tags
@@ -166,6 +174,7 @@ def article_add(request):
     context = {
         'categories': categories,
         'tags': tags,
+        'library_images': MediaFile.objects.filter(file_type='image').order_by('-uploaded_at'),
         'page_title': 'Nouvel article',
         'active_menu': 'articles',
     }
@@ -187,7 +196,13 @@ def article_edit(request, pk):
 
         if 'featured_image' in request.FILES:
             article.featured_image = request.FILES['featured_image']
-
+        else:
+            lib_id = request.POST.get('library_image_id')
+            if lib_id:
+                mf = MediaFile.objects.filter(pk=lib_id, file_type='image').first()
+                if mf:
+                    article.featured_image = mf.file.name
+        article.media_url = request.POST.get('media_url', '').strip() or None
         article.save()
 
         # Tags
@@ -209,6 +224,7 @@ def article_edit(request, pk):
         'categories': categories,
         'tags': tags,
         'article_tags': article_tags,
+        'library_images': MediaFile.objects.filter(file_type='image').order_by('-uploaded_at'),
         'page_title': f'Modifier: {article.title[:40]}',
         'active_menu': 'articles',
     }
@@ -375,8 +391,10 @@ def tag_delete(request, pk):
 @login_required
 def comments_list(request):
     qs = Comment.objects.select_related('article').order_by('-created_at')
-    search = request.GET.get('q', '')
-    status_filter = request.GET.get('status', '')
+    
+    # Handle both GET and POST for HTMX
+    search = request.POST.get('search') or request.GET.get('q', '')
+    status_filter = request.POST.get('status') or request.GET.get('status', '')
 
     if search:
         qs = qs.filter(Q(content__icontains=search) | Q(author_name__icontains=search))
@@ -387,6 +405,7 @@ def comments_list(request):
     page = paginator.get_page(request.GET.get('page', 1))
 
     context = {
+        'comments': page,
         'page_obj': page,
         'search': search,
         'status_filter': status_filter,
@@ -494,11 +513,11 @@ def media_delete(request, pk):
 @login_required
 def newsletter_list(request):
     qs = Newsletter.objects.order_by('-subscribed_at')
-    search = request.GET.get('q', '')
-    active_filter = request.GET.get('active', '')
+    search = request.POST.get('search') or request.GET.get('q', '')
+    active_filter = request.POST.get('active') or request.GET.get('active', '')
 
     if search:
-        qs = qs.filter(Q(email__icontains=search) | Q(first_name__icontains=search))
+        qs = qs.filter(Q(email__icontains=search))
     if active_filter == '1':
         qs = qs.filter(is_active=True)
     elif active_filter == '0':
@@ -508,10 +527,14 @@ def newsletter_list(request):
     page = paginator.get_page(request.GET.get('page', 1))
 
     context = {
+        'subscribers': page,
         'page_obj': page,
         'search': search,
         'active_filter': active_filter,
-        'total_active': Newsletter.objects.filter(is_active=True).count(),
+        'total_subscribers': Newsletter.objects.count(),
+        'confirmed_count': Newsletter.objects.filter(is_active=True).count(),
+        'pending_count': 0, 
+        'unsubscribed_count': Newsletter.objects.filter(is_active=False).count(),
         'page_title': 'Newsletter',
         'active_menu': 'newsletter',
     }
@@ -530,13 +553,153 @@ def newsletter_delete(request, pk):
     return redirect('dashboard:newsletter_list')
 
 
+@login_required
+def newsletter_send(request):
+    from django.core.mail import EmailMessage
+    from django.core.mail.backends.smtp import EmailBackend as SmtpBackend
+    from django.core.mail.backends.console import EmailBackend as ConsoleBackend
+
+    subscribers = Newsletter.objects.filter(is_active=True)
+    site_settings = SiteSettings.get_settings()
+
+    def get_email_backend():
+        if site_settings.smtp_enabled and site_settings.smtp_host and site_settings.smtp_username:
+            return SmtpBackend(
+                host=site_settings.smtp_host,
+                port=site_settings.smtp_port,
+                username=site_settings.smtp_username,
+                password=site_settings.smtp_password,
+                use_tls=site_settings.smtp_use_tls,
+                fail_silently=False,
+            )
+        return ConsoleBackend()
+
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        body_html = request.POST.get('body_html', '').strip()
+        test_email = request.POST.get('test_email', '').strip()
+
+        if not subject or not body_html:
+            messages.error(request, "Sujet et contenu sont obligatoires.")
+        elif test_email:
+            try:
+                unsub_link = request.build_absolute_uri(f'/newsletter/unsubscribe/?email={test_email}')
+                full_html = _wrap_newsletter_html(body_html, unsub_link, site_settings)
+                backend = get_email_backend()
+                email = EmailMessage(
+                    subject=f"[TEST] {subject}",
+                    body=full_html,
+                    from_email=site_settings.smtp_from_email or 'newsletter@capturemedia.tg',
+                    to=[test_email],
+                )
+                email.content_subtype = 'html'
+                backend.open()
+                backend.send_messages([email])
+                backend.close()
+                messages.success(request, f'Email de test envoyé à {test_email}.')
+            except Exception as e:
+                messages.error(request, f'Échec de l\'envoi test : {e}')
+        else:
+            backend = get_email_backend()
+            sent = 0
+            failed = 0
+            try:
+                backend.open()
+            except Exception as e:
+                messages.error(request, f'Impossible de se connecter au serveur SMTP : {e}')
+                return redirect('dashboard:newsletter_send')
+
+            for sub in subscribers:
+                try:
+                    unsub_link = request.build_absolute_uri(f'/newsletter/unsubscribe/?email={sub.email}')
+                    full_html = _wrap_newsletter_html(body_html, unsub_link, site_settings)
+                    email = EmailMessage(
+                        subject=subject,
+                        body=full_html,
+                        from_email=site_settings.smtp_from_email or 'newsletter@capturemedia.tg',
+                        to=[sub.email],
+                    )
+                    email.content_subtype = 'html'
+                    backend.send_messages([email])
+                    sent += 1
+                except Exception:
+                    failed += 1
+
+            backend.close()
+
+            NewsletterSend.objects.create(
+                subject=subject,
+                body_html=body_html,
+                recipients_count=subscribers.count(),
+                sent_count=sent,
+                failed_count=failed,
+                sent_by=request.user,
+            )
+
+            if sent:
+                messages.success(request, f'Newsletter envoyée à {sent} abonné(s).' + (f' {failed} échec(s).' if failed else ''))
+            else:
+                messages.error(request, f'Envoi échoué. Vérifiez la configuration SMTP dans Paramètres.')
+            return redirect('dashboard:newsletter_history')
+
+    smtp_configured = site_settings.smtp_enabled and bool(site_settings.smtp_host)
+    context = {
+        'subscribers_count': subscribers.count(),
+        'smtp_configured': smtp_configured,
+        'smtp_host': site_settings.smtp_host,
+        'smtp_from': site_settings.smtp_from_email or 'newsletter@capturemedia.tg',
+        'page_title': 'Envoyer une newsletter',
+        'active_menu': 'newsletter_send',
+    }
+    return render(request, 'dashboard/newsletter/send.html', context)
+
+
+@login_required
+def newsletter_history(request):
+    sends = NewsletterSend.objects.all()
+    context = {
+        'sends': sends,
+        'page_title': 'Historique des envois',
+        'active_menu': 'newsletter_history',
+    }
+    return render(request, 'dashboard/newsletter/history.html', context)
+
+
+def _wrap_newsletter_html(body_html, unsub_link, site_settings):
+    site_name = site_settings.site_name or 'CaptureMedia'
+    return f'''<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+  <tr><td style="background:#1a1a1a;padding:24px 32px;text-align:center;">
+    <h1 style="margin:0;color:#ffffff;font-size:22px;">{site_name}</h1>
+  </td></tr>
+  <tr><td style="padding:32px;">{body_html}</td></tr>
+  <tr><td style="padding:20px 32px;background:#f9f9f9;text-align:center;font-size:12px;color:#999;">
+    <p>Vous recevez cet email car vous êtes inscrit à la newsletter de {site_name}.</p>
+    <p><a href="{unsub_link}" style="color:#666;">Se désinscrire</a></p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>'''
+
+
 # ─── Publicités ────────────────────────────────────────────────────────────────
 
 @login_required
 def ads_list(request):
     ads = Advertisement.objects.order_by('-created_at')
+    today = timezone.now().date()
+    active_ads = ads.filter(is_active=True, start_date__lte=today, end_date__gte=today)
+    stats = {}
+    for pos, _ in Advertisement.POSITION_CHOICES:
+        stats[pos] = active_ads.filter(position=pos).count()
     context = {
         'ads': ads,
+        'stats': stats,
         'page_title': 'Publicités',
         'active_menu': 'ads',
     }
@@ -545,6 +708,7 @@ def ads_list(request):
 
 @login_required
 def ad_add(request):
+    form_data = {}
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         url = request.POST.get('url', '').strip()
@@ -552,9 +716,15 @@ def ad_add(request):
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         is_active = request.POST.get('is_active') == 'on'
+        form_data = {'title': title, 'url': url, 'position': position,
+                     'start_date': start_date, 'end_date': end_date, 'is_active': is_active}
 
         if not title or not url or 'image' not in request.FILES:
             messages.error(request, "Titre, URL et image sont obligatoires.")
+        elif not position:
+            messages.error(request, "Veuillez sélectionner une position.")
+        elif start_date and end_date and start_date > end_date:
+            messages.error(request, "La date de fin doit être postérieure à la date de début.")
         else:
             Advertisement.objects.create(
                 title=title, url=url, position=position,
@@ -567,6 +737,7 @@ def ad_add(request):
 
     return render(request, 'dashboard/ads/form.html', {
         'positions': Advertisement.POSITION_CHOICES,
+        'form_data': form_data,
         'page_title': 'Nouvelle publicité',
         'active_menu': 'ads',
     })
@@ -576,17 +747,31 @@ def ad_add(request):
 def ad_edit(request, pk):
     ad = get_object_or_404(Advertisement, pk=pk)
     if request.method == 'POST':
-        ad.title = request.POST.get('title', '').strip()
-        ad.url = request.POST.get('url', '').strip()
-        ad.position = request.POST.get('position', '')
-        ad.start_date = request.POST.get('start_date')
-        ad.end_date = request.POST.get('end_date')
-        ad.is_active = request.POST.get('is_active') == 'on'
-        if 'image' in request.FILES:
-            ad.image = request.FILES['image']
-        ad.save()
-        messages.success(request, 'Publicité mise à jour.')
-        return redirect('dashboard:ads_list')
+        title = request.POST.get('title', '').strip()
+        url = request.POST.get('url', '').strip()
+        position = request.POST.get('position', '')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        is_active = request.POST.get('is_active') == 'on'
+
+        if not title or not url:
+            messages.error(request, "Titre et URL sont obligatoires.")
+        elif not position:
+            messages.error(request, "Veuillez sélectionner une position.")
+        elif start_date and end_date and start_date > end_date:
+            messages.error(request, "La date de fin doit être postérieure à la date de début.")
+        else:
+            ad.title = title
+            ad.url = url
+            ad.position = position
+            ad.start_date = start_date
+            ad.end_date = end_date
+            ad.is_active = is_active
+            if 'image' in request.FILES:
+                ad.image = request.FILES['image']
+            ad.save()
+            messages.success(request, 'Publicité mise à jour.')
+            return redirect('dashboard:ads_list')
 
     return render(request, 'dashboard/ads/form.html', {
         'ad': ad,
@@ -870,27 +1055,44 @@ def settings_view(request):
 
     site_settings = SiteSettings.get_settings()
     if request.method == 'POST':
-        site_settings.site_name = request.POST.get('site_name', '').strip()
-        site_settings.site_tagline = request.POST.get('site_tagline', '').strip()
-        site_settings.site_description = request.POST.get('site_description', '').strip()
-        site_settings.contact_email = request.POST.get('contact_email', '').strip()
-        site_settings.contact_phone = request.POST.get('contact_phone', '').strip()
-        site_settings.contact_address = request.POST.get('contact_address', '').strip()
-        site_settings.facebook_url = request.POST.get('facebook_url', '').strip()
-        site_settings.twitter_url = request.POST.get('twitter_url', '').strip()
-        site_settings.instagram_url = request.POST.get('instagram_url', '').strip()
-        site_settings.youtube_url = request.POST.get('youtube_url', '').strip()
-        site_settings.tiktok_url = request.POST.get('tiktok_url', '').strip()
-        site_settings.whatsapp_number = request.POST.get('whatsapp_number', '').strip()
-        site_settings.articles_per_page = int(request.POST.get('articles_per_page', 10))
-        site_settings.enable_comments = request.POST.get('enable_comments') == 'on'
-        site_settings.comment_moderation = request.POST.get('comment_moderation') == 'on'
-        site_settings.maintenance_mode = request.POST.get('maintenance_mode') == 'on'
-        site_settings.google_analytics_id = request.POST.get('google_analytics_id', '').strip()
-        if 'logo' in request.FILES:
-            site_settings.logo = request.FILES['logo']
-        if 'favicon' in request.FILES:
-            site_settings.favicon = request.FILES['favicon']
+        tab = request.POST.get('tab', 'general')
+
+        if tab == 'email':
+            site_settings.smtp_enabled = request.POST.get('smtp_enabled') == 'on'
+            site_settings.smtp_host = request.POST.get('smtp_host', '').strip()
+            site_settings.smtp_port = int(request.POST.get('smtp_port', 587) or 587)
+            site_settings.smtp_use_tls = request.POST.get('smtp_use_tls') == 'on'
+            site_settings.smtp_username = request.POST.get('smtp_username', '').strip()
+            smtp_password = request.POST.get('smtp_password', '').strip()
+            if smtp_password:
+                site_settings.smtp_password = smtp_password
+            site_settings.smtp_from_email = request.POST.get('smtp_from_email', '').strip()
+        else:
+            site_settings.site_name = request.POST.get('site_name', '').strip() or site_settings.site_name
+            site_settings.site_tagline = request.POST.get('site_tagline', '').strip()
+            site_settings.site_description = request.POST.get('site_description', '').strip()
+            site_settings.contact_email = request.POST.get('contact_email', '').strip()
+            site_settings.contact_phone = request.POST.get('contact_phone', '').strip()
+            site_settings.contact_address = request.POST.get('contact_address', '').strip()
+            site_settings.facebook_url = request.POST.get('facebook_url', '').strip()
+            site_settings.twitter_url = request.POST.get('twitter_url', '').strip()
+            site_settings.instagram_url = request.POST.get('instagram_url', '').strip()
+            site_settings.youtube_url = request.POST.get('youtube_url', '').strip()
+            site_settings.tiktok_url = request.POST.get('tiktok_url', '').strip()
+            site_settings.whatsapp_number = request.POST.get('whatsapp_number', '').strip()
+            site_settings.articles_per_page = int(request.POST.get('articles_per_page', 10) or 10)
+            site_settings.enable_comments = request.POST.get('enable_comments') == 'on'
+            site_settings.comment_moderation = request.POST.get('comment_moderation') == 'on'
+            site_settings.maintenance_mode = request.POST.get('maintenance_mode') == 'on'
+            site_settings.google_analytics_id = request.POST.get('google_analytics_id', '').strip()
+            site_settings.donations_enabled = request.POST.get('donations_enabled') == 'on'
+            site_settings.donation_headline = request.POST.get('donation_headline', '').strip()
+            site_settings.donation_message = request.POST.get('donation_message', '').strip()
+            if 'logo' in request.FILES:
+                site_settings.logo = request.FILES['logo']
+            if 'favicon' in request.FILES:
+                site_settings.favicon = request.FILES['favicon']
+
         site_settings.save()
         messages.success(request, 'Paramètres enregistrés.')
         if is_htmx(request):
@@ -942,3 +1144,249 @@ def profile_view(request):
         'page_title': 'Mon profil',
         'active_menu': 'profile',
     })
+
+
+# ─── Dons ──────────────────────────────────────────────────────────────────────
+
+def _donation_stats():
+    confirmed = Donation.objects.filter(status='confirmed')
+    return {
+        'total_donations': Donation.objects.count(),
+        'pending': Donation.objects.filter(status='pending').count(),
+        'confirmed': confirmed.count(),
+        'total_collected': confirmed.filter(donation_type='financial').aggregate(
+            t=Sum('amount'))['t'] or 0,
+        'material': confirmed.filter(donation_type='material').count(),
+    }
+
+
+@login_required
+def donations_list(request):
+    qs = Donation.objects.select_related('campaign', 'channel').order_by('-created_at')
+    type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('q', '')
+
+    if type_filter:
+        qs = qs.filter(donation_type=type_filter)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if search:
+        qs = qs.filter(Q(donor_name__icontains=search) | Q(donor_email__icontains=search) |
+                       Q(donor_phone__icontains=search))
+
+    paginator = Paginator(qs, 20)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'page_obj': page,
+        'stats': _donation_stats(),
+        'type_filter': type_filter,
+        'status_filter': status_filter,
+        'search': search,
+        'page_title': 'Dons reçus',
+        'active_menu': 'donations',
+    }
+    if is_htmx(request):
+        return render(request, 'dashboard/donations/_table.html', context)
+    return render(request, 'dashboard/donations/list.html', context)
+
+
+@login_required
+@require_POST
+def donation_action(request, pk):
+    donation = get_object_or_404(Donation, pk=pk)
+    action = request.POST.get('action', '')
+    if action == 'confirm':
+        donation.status = 'confirmed'
+        donation.confirmed_at = timezone.now()
+    elif action == 'reject':
+        donation.status = 'rejected'
+    elif action == 'pending':
+        donation.status = 'pending'
+        donation.confirmed_at = None
+    donation.save()
+    if is_htmx(request):
+        return render(request, 'dashboard/donations/_row.html', {'d': donation})
+    return redirect('dashboard:donations_list')
+
+
+@login_required
+@require_POST
+def donation_delete(request, pk):
+    donation = get_object_or_404(Donation, pk=pk)
+    donation.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Don supprimé.')
+    return redirect('dashboard:donations_list')
+
+
+# ─── Canaux de don ─────────────────────────────────────────────────────────────
+
+@login_required
+def channels_list(request):
+    channels = DonationChannel.objects.order_by('order', 'name')
+    context = {
+        'channels': channels,
+        'types': DonationChannel.TYPE_CHOICES,
+        'page_title': 'Canaux de don',
+        'active_menu': 'donation_channels',
+    }
+    return render(request, 'dashboard/donations/channels.html', context)
+
+
+@login_required
+def channel_add(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if not name:
+            messages.error(request, "Le nom du canal est obligatoire.")
+        else:
+            ch = DonationChannel(
+                name=name,
+                channel_type=request.POST.get('channel_type', 'mobile_money'),
+                account_number=request.POST.get('account_number', '').strip(),
+                account_name=request.POST.get('account_name', '').strip(),
+                ussd_code=request.POST.get('ussd_code', '').strip(),
+                instructions=request.POST.get('instructions', '').strip(),
+                order=request.POST.get('order') or 0,
+                is_active=request.POST.get('is_active') == 'on',
+            )
+            if 'logo' in request.FILES:
+                ch.logo = request.FILES['logo']
+            ch.save()
+            messages.success(request, f'Canal "{name}" ajouté.')
+        return redirect('dashboard:channels_list')
+    return redirect('dashboard:channels_list')
+
+
+@login_required
+def channel_edit(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    if request.method == 'POST':
+        ch.name = request.POST.get('name', '').strip()
+        ch.channel_type = request.POST.get('channel_type', 'mobile_money')
+        ch.account_number = request.POST.get('account_number', '').strip()
+        ch.account_name = request.POST.get('account_name', '').strip()
+        ch.ussd_code = request.POST.get('ussd_code', '').strip()
+        ch.instructions = request.POST.get('instructions', '').strip()
+        ch.order = request.POST.get('order') or 0
+        ch.is_active = request.POST.get('is_active') == 'on'
+        if 'logo' in request.FILES:
+            ch.logo = request.FILES['logo']
+        ch.save()
+        messages.success(request, 'Canal mis à jour.')
+        return redirect('dashboard:channels_list')
+    context = {
+        'channel': ch,
+        'types': DonationChannel.TYPE_CHOICES,
+        'page_title': f'Modifier : {ch.name}',
+        'active_menu': 'donation_channels',
+    }
+    return render(request, 'dashboard/donations/channel_form.html', context)
+
+
+@login_required
+@require_POST
+def channel_delete(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    if ch.logo:
+        ch.logo.delete(save=False)
+    ch.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Canal supprimé.')
+    return redirect('dashboard:channels_list')
+
+
+@login_required
+@require_POST
+def channel_toggle(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    ch.is_active = not ch.is_active
+    ch.save()
+    return redirect('dashboard:channels_list')
+
+
+# ─── Campagnes de dons ─────────────────────────────────────────────────────────
+
+@login_required
+def campaigns_list(request):
+    campaigns = DonationCampaign.objects.order_by('-created_at')
+    context = {
+        'campaigns': campaigns,
+        'page_title': 'Campagnes de dons',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaigns.html', context)
+
+
+@login_required
+def campaign_add(request):
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        if not title:
+            messages.error(request, "Le titre est obligatoire.")
+        else:
+            camp = DonationCampaign(
+                title=title,
+                description=request.POST.get('description', '').strip(),
+                goal_amount=request.POST.get('goal_amount') or 0,
+                is_active=request.POST.get('is_active') == 'on',
+                expires_at=request.POST.get('expires_at') or None,
+            )
+            if 'cover_image' in request.FILES:
+                camp.cover_image = request.FILES['cover_image']
+            camp.save()
+            messages.success(request, f'Campagne "{title}" créée.')
+            return redirect('dashboard:campaigns_list')
+    context = {
+        'page_title': 'Nouvelle campagne',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaign_form.html', context)
+
+
+@login_required
+def campaign_edit(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    if request.method == 'POST':
+        camp.title = request.POST.get('title', '').strip()
+        camp.description = request.POST.get('description', '').strip()
+        camp.goal_amount = request.POST.get('goal_amount') or 0
+        camp.is_active = request.POST.get('is_active') == 'on'
+        camp.expires_at = request.POST.get('expires_at') or None
+        if 'cover_image' in request.FILES:
+            camp.cover_image = request.FILES['cover_image']
+        camp.save()
+        messages.success(request, 'Campagne mise à jour.')
+        return redirect('dashboard:campaigns_list')
+    context = {
+        'campaign': camp,
+        'page_title': f'Modifier : {camp.title}',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaign_form.html', context)
+
+
+@login_required
+@require_POST
+def campaign_delete(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    if camp.cover_image:
+        camp.cover_image.delete(save=False)
+    camp.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Campagne supprimée.')
+    return redirect('dashboard:campaigns_list')
+
+
+@login_required
+@require_POST
+def campaign_toggle(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    camp.is_active = not camp.is_active
+    camp.save()
+    return redirect('dashboard:campaigns_list')

@@ -1,0 +1,109 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Canaux de don{% endblock %}
+{% block breadcrumb %}Canaux de paiement{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title"><i class="bi bi-wallet2 text-yellow"></i> Canaux de paiement</h1>
+    <p class="page-subtitle">Numéros Mobile Money, comptes bancaires et autres moyens affichés sur la page de dons</p>
+  </div>
+  <a href="{% url 'dashboard:donations_list' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Retour aux dons</a>
+</div>
+
+<!-- Add form -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><span class="card-title">Ajouter un canal</span></div>
+  <div class="card-body">
+    <form action="{% url 'dashboard:channel_add' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid cols-3">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Nom <span class="required">*</span></label>
+          <input type="text" name="name" class="form-control" required placeholder="Ex : Flooz Moov Africa" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Type</label>
+          <select name="channel_type" class="form-select">
+            {% for val, label in types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Numéro / IBAN / identifiant</label>
+          <input type="text" name="account_number" class="form-control" placeholder="Ex : 90 00 00 00" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Intitulé du compte</label>
+          <input type="text" name="account_name" class="form-control" placeholder="Ex : Capture Media SARL" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Code USSD</label>
+          <input type="text" name="ussd_code" class="form-control" placeholder="Ex : *155#" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Logo (optionnel)</label>
+          <input type="file" name="logo" class="form-control" accept="image/*" />
+        </div>
+      </div>
+      <div class="form-group" style="margin:16px 0 0;">
+        <label class="form-label">Instructions (optionnel)</label>
+        <input type="text" name="instructions" class="form-control" placeholder="Ex : Envoyez le montant puis enregistrez votre don ci-dessous." />
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:16px;">
+        <label class="form-check"><input type="checkbox" name="is_active" checked> <span class="form-check-label">Actif</span></label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="form-label" style="margin:0;">Ordre</span>
+          <input type="number" name="order" class="form-control" value="0" min="0" style="width:80px;" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-left:auto;"><i class="bi bi-plus-lg"></i> Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- List -->
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Canal</th><th>Type</th><th>Numéro</th><th>Statut</th><th style="width:140px;">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for ch in channels %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              {% if ch.logo %}<img src="{{ ch.logo.url }}" class="img-preview" style="width:40px;height:40px;border-radius:8px;">{% endif %}
+              <div>
+                <div style="font-weight:600;">{{ ch.name }}</div>
+                {% if ch.account_name %}<div class="text-sm text-dim">{{ ch.account_name }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="text-sm">{{ ch.get_channel_type_display }}</td>
+          <td><strong>{{ ch.account_number|default:"—" }}</strong>{% if ch.ussd_code %}<div class="text-sm text-dim">{{ ch.ussd_code }}</div>{% endif %}</td>
+          <td>{% if ch.is_active %}<span class="badge badge-active">Actif</span>{% else %}<span class="badge badge-inactive">Inactif</span>{% endif %}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <form action="{% url 'dashboard:channel_toggle' ch.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-icon btn-sm {% if ch.is_active %}btn-success{% else %}btn-ghost{% endif %}" title="Activer/Désactiver">
+                  <i class="bi bi-{% if ch.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+                </button>
+              </form>
+              <a href="{% url 'dashboard:channel_edit' ch.pk %}" class="btn btn-icon btn-sm btn-secondary" title="Modifier"><i class="bi bi-pencil"></i></a>
+              <form hx-post="{% url 'dashboard:channel_delete' ch.pk %}" hx-target="closest tr" hx-swap="outerHTML swap:0.2s" hx-confirm="Supprimer ce canal ?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Supprimer"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="empty-state"><i class="bi bi-wallet2"></i><h3>Aucun canal</h3><p>Ajoutez un moyen de paiement avec le formulaire ci-dessus.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
