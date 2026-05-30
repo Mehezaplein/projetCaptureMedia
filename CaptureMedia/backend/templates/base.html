@@ -29,6 +29,17 @@
   <link rel="stylesheet" href="{% static 'assets/css/capturemedia-theme.css' %}">
 
   {% block extra_head %}{% endblock %}
+
+  {% if site_settings.google_analytics_id %}
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site_settings.google_analytics_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ site_settings.google_analytics_id }}');
+  </script>
+  {% endif %}
 </head>
 <body>
 
@@ -64,9 +75,12 @@
     <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
     {% endif %}
   {% endfor %}
-  <a href="{% url 'mediatheque' %}">Médiathèque</a>
+  <a href="{% url 'videos' %}">Vidéos</a>
+  <a href="{% url 'about' %}">À propos</a>
   <a href="{% url 'contact' %}">Contact</a>
-  <a href="{% url 'login' %}" style="color:#FFCC00;margin-top:20px;">Connexion →</a>
+  {% if site_settings.donations_enabled %}
+  <a href="{% url 'support' %}" style="color:#F5C518;font-weight:700;margin-top:12px;"><i class="ri-heart-fill"></i> Soutenir le média</a>
+  {% endif %}
 </nav>
 
 <!-- Back to top -->

@@ -16,6 +16,34 @@
 </div>
 {% endif %}
 
+<style>
+  /* Barre utilitaire (institutionnel) */
+  .cm-utilitybar{background:#0d0d0d;color:rgba(255,255,255,.55);font-size:.78rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .cm-utilitybar-inner{display:flex;align-items:center;justify-content:space-between;height:34px;gap:16px}
+  .cm-utilitybar .date{text-transform:capitalize}
+  .cm-utilitybar-links{display:flex;gap:18px;align-items:center}
+  .cm-utilitybar-links a{color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s}
+  .cm-utilitybar-links a:hover{color:#F5C518}
+  @media(max-width:768px){.cm-utilitybar{display:none}}
+  /* État actif + Plus */
+  .cm-nav a.active,.cm-nav-dropdown.active>a{color:#F5C518!important}
+  .cm-nav .cm-nav-more>a::after{content:" ▾";font-size:.7em;opacity:.7}
+</style>
+
+<!-- ── Barre utilitaire ── -->
+<div class="cm-utilitybar">
+  <div class="cm-container">
+    <div class="cm-utilitybar-inner">
+      <span class="date">{% now "l j F Y" %}</span>
+      <div class="cm-utilitybar-links">
+        <a href="{% url 'about' %}">À propos</a>
+        <a href="{% url 'contact' %}">Contact</a>
+        <a href="{% url 'legal' %}">Mentions légales</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <header class="cm-header">
   <div class="cm-container">
     <div class="cm-header-inner">
@@ -29,29 +57,38 @@
         {% endif %}
       </a>
 
-      <!-- Nav -->
+      <!-- Nav : rubriques éditoriales -->
       <nav class="cm-nav">
-        <a href="{% url 'index' %}">Accueil</a>
-        {% for cat in global_categories %}
-          {% if not cat.parent and cat.slug %}
+        <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}">Accueil</a>
+
+        {% for cat in global_nav_categories %}
           {% if cat.children.exists %}
-          <div class="cm-nav-dropdown">
+          <div class="cm-nav-dropdown {% if request.resolver_match.url_name == 'category_articles' and request.resolver_match.kwargs.slug == cat.slug %}active{% endif %}">
             <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
             <div class="cm-dropdown-menu">
               {% for sub in cat.children.all %}
-              {% if sub.slug %}
-              <a href="{% url 'category_articles' sub.slug %}">{{ sub.name }}</a>
-              {% endif %}
+              {% if sub.slug %}<a href="{% url 'category_articles' sub.slug %}">{{ sub.name }}</a>{% endif %}
               {% endfor %}
             </div>
           </div>
           {% else %}
-          <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
-          {% endif %}
+          <a href="{% url 'category_articles' cat.slug %}"
+             class="{% if request.resolver_match.url_name == 'category_articles' and request.resolver_match.kwargs.slug == cat.slug %}active{% endif %}">{{ cat.name }}</a>
           {% endif %}
         {% endfor %}
-        <a href="{% url 'mediatheque' %}">Médiathèque</a>
-        <a href="{% url 'contact' %}">Contact</a>
+
+        {% if global_more_categories %}
+        <div class="cm-nav-dropdown cm-nav-more">
+          <a href="#" onclick="return false;">Plus</a>
+          <div class="cm-dropdown-menu">
+            {% for cat in global_more_categories %}
+            <a href="{% url 'category_articles' cat.slug %}">{{ cat.name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'videos' %}" class="{% if request.resolver_match.url_name == 'videos' %}active{% endif %}">Vidéos</a>
       </nav>
 
       <!-- Actions -->
@@ -60,7 +97,11 @@
           <input type="text" name="q" placeholder="Rechercher…" value="{{ query|default:'' }}">
           <button type="submit"><i class="ri-search-line"></i></button>
         </form>
-        <a href="{% url 'login' %}" class="cm-btn-login">Connexion</a>
+        {% if site_settings.donations_enabled %}
+        <a href="{% url 'support' %}" class="cm-btn-login" style="background:#F5C518;color:#111;border-color:#F5C518;font-weight:700;">
+          <i class="ri-heart-fill"></i> Faire un don
+        </a>
+        {% endif %}
         <button class="cm-hamburger" onclick="openMobileNav()" aria-label="Menu">
           <span></span><span></span><span></span>
         </button>

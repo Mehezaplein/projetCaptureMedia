@@ -79,7 +79,7 @@
           {% else %}
           <div class="cm-footer-contact-item">
             <i class="ri-mail-line"></i>
-            <a href="mailto:capturedreamsmakers@gmail.com" style="color:inherit;">capturedreamsmakers@gmail.com</a>
+            <a href="mailto:contact@capturemedia.tg" style="color:inherit;">contact@capturemedia.tg</a>
           </div>
           {% endif %}
         </div>
@@ -106,10 +106,12 @@
     <div class="cm-container" style="width:100%;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <span>&copy; <span id="footer-year"></span> {{ site_settings.site_name|default:"CaptureMedia" }}. Tous droits réservés.</span>
-        <div style="display:flex;gap:20px;">
-          <a href="{% url 'index' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Accueil</a>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">
+          <a href="{% url 'about' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">À propos</a>
+          <a href="{% url 'videos' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Vidéos</a>
           <a href="{% url 'contact' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Contact</a>
-          <a href="{% url 'mediatheque' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Médiathèque</a>
+          <a href="{% url 'legal' %}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='#FFCC00'" onmouseout="this.style.color=''">Mentions légales</a>
+          <a href="{% url 'support' %}" style="color:#FFCC00;transition:color .2s;font-weight:700;">Soutenir</a>
         </div>
       </div>
     </div>

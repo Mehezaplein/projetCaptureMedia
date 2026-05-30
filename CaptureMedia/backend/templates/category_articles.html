@@ -59,6 +59,18 @@
             <a href="{% url 'index' %}" class="cm-btn" style="margin-top:20px;display:inline-flex;">← Retour à l'accueil</a>
           </div>
           {% endfor %}
+
+          {% if page_obj.has_other_pages %}
+          <div class="cm-pagination" style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:40px;flex-wrap:wrap;">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="cm-btn" style="padding:8px 14px;">← Précédent</a>
+            {% endif %}
+            <span style="color:var(--muted);font-size:.9rem;">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="cm-btn" style="padding:8px 14px;">Suivant →</a>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
 
         <!-- Sidebar -->

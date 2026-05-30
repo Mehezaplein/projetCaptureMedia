@@ -1,0 +1,54 @@
+<tr id="don-{{ d.pk }}">
+  <td>
+    <div style="font-weight:600;">{% if d.is_anonymous %}<span class="text-muted"><i class="bi bi-incognito"></i> Anonyme</span>{% else %}{{ d.donor_name }}{% endif %}</div>
+    <div class="text-sm text-dim">
+      {% if d.donor_phone %}{{ d.donor_phone }}{% endif %}
+      {% if d.donor_email %} · {{ d.donor_email }}{% endif %}
+    </div>
+  </td>
+  <td>
+    {% if d.donation_type == 'financial' %}
+      <span class="badge badge-yellow"><i class="bi bi-cash-coin"></i> Financier</span>
+    {% else %}
+      <span class="badge badge-archived"><i class="bi bi-gift"></i> Matériel</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if d.donation_type == 'financial' %}
+      <strong>{{ d.amount|floatformat:0 }} {{ d.currency }}</strong>
+      {% if d.channel %}<div class="text-sm text-dim">{{ d.channel.name }}</div>{% endif %}
+      {% if d.transaction_reference %}<div class="text-sm text-dim">Réf : {{ d.transaction_reference }}</div>{% endif %}
+    {% else %}
+      <span class="truncate" style="display:block;max-width:240px;" title="{{ d.item_description }}">{{ d.item_description|truncatechars:60 }}</span>
+      {% if d.estimated_value %}<div class="text-sm text-dim">~ {{ d.estimated_value|floatformat:0 }} FCFA</div>{% endif %}
+    {% endif %}
+    {% if d.message %}<div class="text-sm text-muted" style="font-style:italic;margin-top:3px;">« {{ d.message|truncatechars:60 }} »</div>{% endif %}
+  </td>
+  <td>
+    {% if d.status == 'confirmed' %}<span class="badge badge-approved">Confirmé</span>
+    {% elif d.status == 'rejected' %}<span class="badge badge-rejected">Rejeté</span>
+    {% else %}<span class="badge badge-pending">En attente</span>{% endif %}
+  </td>
+  <td class="text-dim text-sm">{{ d.created_at|date:"d/m/Y H:i" }}</td>
+  <td>
+    <div style="display:flex;gap:6px;align-items:center;">
+      {% if d.status != 'confirmed' %}
+      <form hx-post="{% url 'dashboard:donation_action' d.pk %}" hx-target="#don-{{ d.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}<input type="hidden" name="action" value="confirm">
+        <button type="submit" class="btn btn-icon btn-sm btn-success" title="Confirmer la réception"><i class="bi bi-check-lg"></i></button>
+      </form>
+      {% endif %}
+      {% if d.status != 'rejected' %}
+      <form hx-post="{% url 'dashboard:donation_action' d.pk %}" hx-target="#don-{{ d.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}<input type="hidden" name="action" value="reject">
+        <button type="submit" class="btn btn-icon btn-sm btn-ghost" title="Rejeter"><i class="bi bi-x-lg"></i></button>
+      </form>
+      {% endif %}
+      <form hx-post="{% url 'dashboard:donation_delete' d.pk %}" hx-target="#don-{{ d.pk }}"
+            hx-swap="outerHTML swap:0.2s" hx-confirm="Supprimer définitivement ce don ?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Supprimer"><i class="bi bi-trash3"></i></button>
+      </form>
+    </div>
+  </td>
+</tr>

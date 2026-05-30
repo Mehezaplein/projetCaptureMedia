@@ -1,5 +1,5 @@
 from .models import Comment, SiteSettings, Category, BreakingNews, Advertisement, Article, Poll
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 
 
@@ -31,14 +31,32 @@ def dashboard_context(request):
     ctx = {}
     if request.user.is_authenticated and request.user.is_staff:
         ctx['pending_comments_count'] = Comment.objects.filter(status='pending').count()
+        from .models import Donation
+        ctx['pending_donations_count'] = Donation.objects.filter(status='pending').count()
 
     try:
+        now = timezone.now()
+        not_expired = Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+
         ctx['site_settings'] = SiteSettings.get_settings()
-        ctx['global_categories'] = Category.objects.filter(is_active=True).order_by('order')
-        ctx['global_breaking_news'] = BreakingNews.objects.filter(is_active=True).order_by('order', '-created_at')[:5]
+        cats = Category.objects.filter(is_active=True).order_by('order')
+        ctx['global_categories'] = cats
+        # Rubriques de niveau 1 pour la navbar : 6 visibles + le reste dans « Plus »
+        top_level = [c for c in cats if c.parent_id is None and c.slug]
+        ctx['global_nav_categories'] = top_level[:6]
+        ctx['global_more_categories'] = top_level[6:]
+        ctx['global_breaking_news'] = BreakingNews.objects.filter(
+            not_expired, is_active=True).order_by('order', '-created_at')[:5]
         ctx['global_suggestions'] = Article.objects.filter(status='published').order_by('-views_count')[:5]
-        ctx['global_active_poll'] = Poll.objects.filter(is_active=True).order_by('-created_at').first()
-        ctx['global_active_polls'] = list(Poll.objects.filter(is_active=True).prefetch_related('choices').order_by('-created_at')[:3])
+        ctx['global_active_poll'] = Poll.objects.filter(
+            not_expired, is_active=True).order_by('-created_at').first()
+        ctx['global_active_polls'] = list(Poll.objects.filter(
+            not_expired, is_active=True).prefetch_related('choices').order_by('-created_at')[:3])
+
+        # Campagne de dons active (pour CTA + thermomètre global)
+        from .models import DonationCampaign
+        ctx['global_active_campaign'] = DonationCampaign.objects.filter(
+            not_expired, is_active=True).order_by('-created_at').first()
 
         ctx.update(get_active_ads())
 

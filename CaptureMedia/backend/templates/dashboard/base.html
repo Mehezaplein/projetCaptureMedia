@@ -1053,11 +1053,6 @@
       <span>Bibliothèque médias</span>
     </a>
 
-    <a href="{% url 'dashboard:media_unused' %}" class="nav-item {% if active_menu == 'media_unused' %}active{% endif %}">
-      <i class="bi bi-trash3"></i>
-      <span>Fichiers inutilisés</span>
-    </a>
-
     <a href="{% url 'dashboard:comments_list' %}" class="nav-item {% if active_menu == 'comments' %}active{% endif %}">
       <i class="bi bi-chat-left-text"></i>
       <span>Commentaires</span>
@@ -1097,6 +1092,27 @@
     <a href="{% url 'dashboard:ads_list' %}" class="nav-item {% if active_menu == 'ads' %}active{% endif %}">
       <i class="bi bi-megaphone"></i>
       <span>Publicités</span>
+    </a>
+
+    <div class="divider"></div>
+    <div class="nav-section-label">Dons & Soutien</div>
+
+    <a href="{% url 'dashboard:donations_list' %}" class="nav-item {% if active_menu == 'donations' %}active{% endif %}">
+      <i class="bi bi-heart-fill"></i>
+      <span>Dons reçus</span>
+      {% if pending_donations_count %}
+        <span class="nav-badge yellow">{{ pending_donations_count }}</span>
+      {% endif %}
+    </a>
+
+    <a href="{% url 'dashboard:campaigns_list' %}" class="nav-item {% if active_menu == 'donation_campaigns' %}active{% endif %}">
+      <i class="bi bi-bullseye"></i>
+      <span>Campagnes</span>
+    </a>
+
+    <a href="{% url 'dashboard:channels_list' %}" class="nav-item {% if active_menu == 'donation_channels' %}active{% endif %}">
+      <i class="bi bi-wallet2"></i>
+      <span>Canaux de paiement</span>
     </a>
 
     <div class="divider"></div>

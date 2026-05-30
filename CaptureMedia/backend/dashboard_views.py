@@ -13,7 +13,8 @@ from datetime import timedelta
 
 from .models import (
     Article, Category, Tag, Comment, MediaFile,
-    Newsletter, NewsletterSend, Advertisement, BreakingNews, Poll, PollChoice, SiteSettings
+    Newsletter, NewsletterSend, Advertisement, BreakingNews, Poll, PollChoice, SiteSettings,
+    DonationChannel, DonationCampaign, Donation
 )
 
 
@@ -150,6 +151,12 @@ def article_add(request):
             )
             if 'featured_image' in request.FILES:
                 article.featured_image = request.FILES['featured_image']
+            else:
+                lib_id = request.POST.get('library_image_id')
+                if lib_id:
+                    mf = MediaFile.objects.filter(pk=lib_id, file_type='image').first()
+                    if mf:
+                        article.featured_image = mf.file.name
             article.media_url = request.POST.get('media_url', '').strip() or None
             article.save()
 
@@ -167,6 +174,7 @@ def article_add(request):
     context = {
         'categories': categories,
         'tags': tags,
+        'library_images': MediaFile.objects.filter(file_type='image').order_by('-uploaded_at'),
         'page_title': 'Nouvel article',
         'active_menu': 'articles',
     }
@@ -188,6 +196,12 @@ def article_edit(request, pk):
 
         if 'featured_image' in request.FILES:
             article.featured_image = request.FILES['featured_image']
+        else:
+            lib_id = request.POST.get('library_image_id')
+            if lib_id:
+                mf = MediaFile.objects.filter(pk=lib_id, file_type='image').first()
+                if mf:
+                    article.featured_image = mf.file.name
         article.media_url = request.POST.get('media_url', '').strip() or None
         article.save()
 
@@ -210,6 +224,7 @@ def article_edit(request, pk):
         'categories': categories,
         'tags': tags,
         'article_tags': article_tags,
+        'library_images': MediaFile.objects.filter(file_type='image').order_by('-uploaded_at'),
         'page_title': f'Modifier: {article.title[:40]}',
         'active_menu': 'articles',
     }
@@ -382,7 +397,7 @@ def comments_list(request):
     status_filter = request.POST.get('status') or request.GET.get('status', '')
 
     if search:
-        qs = qs.filter(Q(content__icontains=search) | Q(name__icontains=search))
+        qs = qs.filter(Q(content__icontains=search) | Q(author_name__icontains=search))
     if status_filter:
         qs = qs.filter(status=status_filter)
 
@@ -491,34 +506,6 @@ def media_delete(request, pk):
     if is_htmx(request):
         return HttpResponse('')
     return redirect('dashboard:media_library')
-
-
-@login_required
-def media_unused(request):
-    used_files = set()
-    for article in Article.objects.exclude(featured_image='').exclude(featured_image=None):
-        used_files.add(article.featured_image.name)
-    for cat in Category.objects.exclude(image='').exclude(image=None):
-        used_files.add(cat.image.name)
-    for ad in Advertisement.objects.exclude(image=''):
-        used_files.add(ad.image.name)
-
-    unused = MediaFile.objects.exclude(file__in=used_files).order_by('-uploaded_at')
-
-    if request.method == 'POST' and request.POST.get('action') == 'delete_all':
-        count = unused.count()
-        for mf in unused:
-            mf.file.delete(save=False)
-            mf.delete()
-        messages.success(request, f'{count} fichier(s) inutilisé(s) supprimé(s).')
-        return redirect('dashboard:media_unused')
-
-    context = {
-        'unused': unused,
-        'page_title': 'Fichiers inutilisés',
-        'active_menu': 'media_unused',
-    }
-    return render(request, 'dashboard/media/unused.html', context)
 
 
 # ─── Newsletter ────────────────────────────────────────────────────────────────
@@ -1098,6 +1085,9 @@ def settings_view(request):
             site_settings.comment_moderation = request.POST.get('comment_moderation') == 'on'
             site_settings.maintenance_mode = request.POST.get('maintenance_mode') == 'on'
             site_settings.google_analytics_id = request.POST.get('google_analytics_id', '').strip()
+            site_settings.donations_enabled = request.POST.get('donations_enabled') == 'on'
+            site_settings.donation_headline = request.POST.get('donation_headline', '').strip()
+            site_settings.donation_message = request.POST.get('donation_message', '').strip()
             if 'logo' in request.FILES:
                 site_settings.logo = request.FILES['logo']
             if 'favicon' in request.FILES:
@@ -1154,3 +1144,249 @@ def profile_view(request):
         'page_title': 'Mon profil',
         'active_menu': 'profile',
     })
+
+
+# ─── Dons ──────────────────────────────────────────────────────────────────────
+
+def _donation_stats():
+    confirmed = Donation.objects.filter(status='confirmed')
+    return {
+        'total_donations': Donation.objects.count(),
+        'pending': Donation.objects.filter(status='pending').count(),
+        'confirmed': confirmed.count(),
+        'total_collected': confirmed.filter(donation_type='financial').aggregate(
+            t=Sum('amount'))['t'] or 0,
+        'material': confirmed.filter(donation_type='material').count(),
+    }
+
+
+@login_required
+def donations_list(request):
+    qs = Donation.objects.select_related('campaign', 'channel').order_by('-created_at')
+    type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('q', '')
+
+    if type_filter:
+        qs = qs.filter(donation_type=type_filter)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if search:
+        qs = qs.filter(Q(donor_name__icontains=search) | Q(donor_email__icontains=search) |
+                       Q(donor_phone__icontains=search))
+
+    paginator = Paginator(qs, 20)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'page_obj': page,
+        'stats': _donation_stats(),
+        'type_filter': type_filter,
+        'status_filter': status_filter,
+        'search': search,
+        'page_title': 'Dons reçus',
+        'active_menu': 'donations',
+    }
+    if is_htmx(request):
+        return render(request, 'dashboard/donations/_table.html', context)
+    return render(request, 'dashboard/donations/list.html', context)
+
+
+@login_required
+@require_POST
+def donation_action(request, pk):
+    donation = get_object_or_404(Donation, pk=pk)
+    action = request.POST.get('action', '')
+    if action == 'confirm':
+        donation.status = 'confirmed'
+        donation.confirmed_at = timezone.now()
+    elif action == 'reject':
+        donation.status = 'rejected'
+    elif action == 'pending':
+        donation.status = 'pending'
+        donation.confirmed_at = None
+    donation.save()
+    if is_htmx(request):
+        return render(request, 'dashboard/donations/_row.html', {'d': donation})
+    return redirect('dashboard:donations_list')
+
+
+@login_required
+@require_POST
+def donation_delete(request, pk):
+    donation = get_object_or_404(Donation, pk=pk)
+    donation.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Don supprimé.')
+    return redirect('dashboard:donations_list')
+
+
+# ─── Canaux de don ─────────────────────────────────────────────────────────────
+
+@login_required
+def channels_list(request):
+    channels = DonationChannel.objects.order_by('order', 'name')
+    context = {
+        'channels': channels,
+        'types': DonationChannel.TYPE_CHOICES,
+        'page_title': 'Canaux de don',
+        'active_menu': 'donation_channels',
+    }
+    return render(request, 'dashboard/donations/channels.html', context)
+
+
+@login_required
+def channel_add(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if not name:
+            messages.error(request, "Le nom du canal est obligatoire.")
+        else:
+            ch = DonationChannel(
+                name=name,
+                channel_type=request.POST.get('channel_type', 'mobile_money'),
+                account_number=request.POST.get('account_number', '').strip(),
+                account_name=request.POST.get('account_name', '').strip(),
+                ussd_code=request.POST.get('ussd_code', '').strip(),
+                instructions=request.POST.get('instructions', '').strip(),
+                order=request.POST.get('order') or 0,
+                is_active=request.POST.get('is_active') == 'on',
+            )
+            if 'logo' in request.FILES:
+                ch.logo = request.FILES['logo']
+            ch.save()
+            messages.success(request, f'Canal "{name}" ajouté.')
+        return redirect('dashboard:channels_list')
+    return redirect('dashboard:channels_list')
+
+
+@login_required
+def channel_edit(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    if request.method == 'POST':
+        ch.name = request.POST.get('name', '').strip()
+        ch.channel_type = request.POST.get('channel_type', 'mobile_money')
+        ch.account_number = request.POST.get('account_number', '').strip()
+        ch.account_name = request.POST.get('account_name', '').strip()
+        ch.ussd_code = request.POST.get('ussd_code', '').strip()
+        ch.instructions = request.POST.get('instructions', '').strip()
+        ch.order = request.POST.get('order') or 0
+        ch.is_active = request.POST.get('is_active') == 'on'
+        if 'logo' in request.FILES:
+            ch.logo = request.FILES['logo']
+        ch.save()
+        messages.success(request, 'Canal mis à jour.')
+        return redirect('dashboard:channels_list')
+    context = {
+        'channel': ch,
+        'types': DonationChannel.TYPE_CHOICES,
+        'page_title': f'Modifier : {ch.name}',
+        'active_menu': 'donation_channels',
+    }
+    return render(request, 'dashboard/donations/channel_form.html', context)
+
+
+@login_required
+@require_POST
+def channel_delete(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    if ch.logo:
+        ch.logo.delete(save=False)
+    ch.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Canal supprimé.')
+    return redirect('dashboard:channels_list')
+
+
+@login_required
+@require_POST
+def channel_toggle(request, pk):
+    ch = get_object_or_404(DonationChannel, pk=pk)
+    ch.is_active = not ch.is_active
+    ch.save()
+    return redirect('dashboard:channels_list')
+
+
+# ─── Campagnes de dons ─────────────────────────────────────────────────────────
+
+@login_required
+def campaigns_list(request):
+    campaigns = DonationCampaign.objects.order_by('-created_at')
+    context = {
+        'campaigns': campaigns,
+        'page_title': 'Campagnes de dons',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaigns.html', context)
+
+
+@login_required
+def campaign_add(request):
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        if not title:
+            messages.error(request, "Le titre est obligatoire.")
+        else:
+            camp = DonationCampaign(
+                title=title,
+                description=request.POST.get('description', '').strip(),
+                goal_amount=request.POST.get('goal_amount') or 0,
+                is_active=request.POST.get('is_active') == 'on',
+                expires_at=request.POST.get('expires_at') or None,
+            )
+            if 'cover_image' in request.FILES:
+                camp.cover_image = request.FILES['cover_image']
+            camp.save()
+            messages.success(request, f'Campagne "{title}" créée.')
+            return redirect('dashboard:campaigns_list')
+    context = {
+        'page_title': 'Nouvelle campagne',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaign_form.html', context)
+
+
+@login_required
+def campaign_edit(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    if request.method == 'POST':
+        camp.title = request.POST.get('title', '').strip()
+        camp.description = request.POST.get('description', '').strip()
+        camp.goal_amount = request.POST.get('goal_amount') or 0
+        camp.is_active = request.POST.get('is_active') == 'on'
+        camp.expires_at = request.POST.get('expires_at') or None
+        if 'cover_image' in request.FILES:
+            camp.cover_image = request.FILES['cover_image']
+        camp.save()
+        messages.success(request, 'Campagne mise à jour.')
+        return redirect('dashboard:campaigns_list')
+    context = {
+        'campaign': camp,
+        'page_title': f'Modifier : {camp.title}',
+        'active_menu': 'donation_campaigns',
+    }
+    return render(request, 'dashboard/donations/campaign_form.html', context)
+
+
+@login_required
+@require_POST
+def campaign_delete(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    if camp.cover_image:
+        camp.cover_image.delete(save=False)
+    camp.delete()
+    if is_htmx(request):
+        return HttpResponse('')
+    messages.success(request, 'Campagne supprimée.')
+    return redirect('dashboard:campaigns_list')
+
+
+@login_required
+@require_POST
+def campaign_toggle(request, pk):
+    camp = get_object_or_404(DonationCampaign, pk=pk)
+    camp.is_active = not camp.is_active
+    camp.save()
+    return redirect('dashboard:campaigns_list')

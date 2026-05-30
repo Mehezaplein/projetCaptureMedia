@@ -1,0 +1,50 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}Campagne{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ page_title }}</h1>
+  </div>
+  <a href="{% url 'dashboard:campaigns_list' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+
+<div class="card" style="max-width:760px;">
+  <div class="card-body">
+    <form action="{% if campaign %}{% url 'dashboard:campaign_edit' campaign.pk %}{% else %}{% url 'dashboard:campaign_add' %}{% endif %}"
+          method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Titre <span class="required">*</span></label>
+        <input type="text" name="title" class="form-control" required value="{{ campaign.title|default:'' }}" placeholder="Ex : Aidez-nous à équiper notre rédaction" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3" placeholder="Expliquez à quoi servira la collecte…">{{ campaign.description|default:'' }}</textarea>
+      </div>
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Objectif (FCFA)</label>
+          <input type="number" name="goal_amount" class="form-control" min="0" value="{{ campaign.goal_amount|default:0 }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de fin (optionnel)</label>
+          <input type="datetime-local" name="expires_at" class="form-control"
+                 value="{{ campaign.expires_at|date:'Y-m-d\TH:i' }}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image de couverture</label>
+        {% if campaign.cover_image %}<div style="margin-bottom:8px;"><img src="{{ campaign.cover_image.url }}" style="height:90px;border-radius:8px;"></div>{% endif %}
+        <input type="file" name="cover_image" class="form-control" accept="image/*" />
+      </div>
+      <label class="form-check" style="margin-bottom:20px;"><input type="checkbox" name="is_active" {% if not campaign or campaign.is_active %}checked{% endif %}> <span class="form-check-label">Active</span></label>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+        <a href="{% url 'dashboard:campaigns_list' %}" class="btn btn-ghost">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

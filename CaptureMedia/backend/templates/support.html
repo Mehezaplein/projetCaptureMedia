@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Soutenir {{ site_settings.site_name|default:"CaptureMedia" }} — Le média du peuple{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sup-hero{background:linear-gradient(135deg,#111 0%,#1c1c1c 100%);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  .sup-hero::after{content:'';position:absolute;top:-40%;right:-10%;width:480px;height:480px;
+       background:radial-gradient(circle,rgba(245,197,24,.18),transparent 70%);pointer-events:none}
+  .sup-hero-inner{max-width:760px;position:relative;z-index:1}
+  .sup-eyebrow{display:inline-block;background:rgba(245,197,24,.15);color:#F5C518;font-weight:700;
+       font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:30px;margin-bottom:20px}
+  .sup-hero h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;line-height:1.08;margin-bottom:18px}
+  .sup-hero h1 span{color:#F5C518}
+  .sup-hero p{font-size:1.1rem;color:rgba(255,255,255,.78);line-height:1.7;max-width:620px}
+  .sup-trust{display:flex;gap:32px;flex-wrap:wrap;margin-top:36px}
+  .sup-trust-item .num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#F5C518;line-height:1}
+  .sup-trust-item .lbl{font-size:.82rem;color:rgba(255,255,255,.6);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+
+  .sup-wrap{padding:48px 0 64px}
+  .sup-grid{display:grid;grid-template-columns:1.4fr .9fr;gap:40px;align-items:start}
+  @media(max-width:900px){.sup-grid{grid-template-columns:1fr}}
+
+  /* Thermomètre */
+  .sup-campaign{background:#fff;border:1px solid var(--border,#eee);border-radius:14px;padding:28px;margin-bottom:32px;box-shadow:0 6px 30px rgba(0,0,0,.06)}
+  .sup-campaign h3{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:800;margin-bottom:8px}
+  .sup-campaign p{color:#666;font-size:.95rem;line-height:1.6;margin-bottom:20px}
+  .sup-bar-outer{height:16px;background:#f0f0f0;border-radius:20px;overflow:hidden}
+  .sup-bar-inner{height:100%;background:linear-gradient(90deg,#F5C518,#e0b314);border-radius:20px;transition:width 1s ease;min-width:6px}
+  .sup-bar-stats{display:flex;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px}
+  .sup-bar-stats .big{font-size:1.5rem;font-weight:900;color:#111}
+  .sup-bar-stats .sub{font-size:.82rem;color:#888}
+  .sup-bar-stats .right{text-align:right}
+
+  /* Tabs */
+  .sup-tabs{display:flex;gap:8px;margin-bottom:24px;background:#f4f4f4;padding:6px;border-radius:12px}
+  .sup-tab{flex:1;text-align:center;padding:12px;border-radius:8px;font-weight:700;font-size:.95rem;cursor:pointer;border:none;background:transparent;color:#666;transition:.2s}
+  .sup-tab.active{background:#111;color:#F5C518;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .sup-panel{display:none}
+  .sup-panel.active{display:block;animation:supFade .3s ease}
+  @keyframes supFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Montants suggérés */
+  .sup-amounts{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+  .sup-amount{padding:12px 18px;border:2px solid #eee;border-radius:10px;background:#fff;font-weight:800;cursor:pointer;transition:.15s;font-size:.95rem}
+  .sup-amount:hover{border-color:#F5C518}
+  .sup-amount.active{border-color:#F5C518;background:#F5C518;color:#111}
+
+  /* Canaux */
+  .sup-channels{display:flex;flex-direction:column;gap:12px}
+  .sup-channel{display:flex;align-items:center;gap:14px;border:1px solid #eee;border-radius:12px;padding:14px 16px;background:#fff}
+  .sup-channel-ic{width:46px;height:46px;border-radius:10px;background:#111;color:#F5C518;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden}
+  .sup-channel-ic img{width:100%;height:100%;object-fit:cover}
+  .sup-channel-info{flex:1;min-width:0}
+  .sup-channel-info .nm{font-weight:800;font-size:.95rem}
+  .sup-channel-info .acc{font-size:1.05rem;font-weight:700;color:#111;letter-spacing:.5px}
+  .sup-channel-info .meta{font-size:.78rem;color:#888}
+  .sup-copy{border:none;background:#f4f4f4;border-radius:8px;padding:8px 12px;font-weight:700;font-size:.8rem;cursor:pointer;color:#111;transition:.15s;white-space:nowrap}
+  .sup-copy:hover{background:#F5C518}
+
+  .sup-card{background:#fff;border:1px solid #eee;border-radius:14px;padding:24px}
+  .sup-card h4{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:800;margin-bottom:6px}
+  .sup-card .hint{font-size:.85rem;color:#888;margin-bottom:20px}
+
+  /* Mur des donateurs */
+  .sup-wall{margin-top:8px}
+  .sup-wall-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .sup-donor{border:1px solid #eee;border-radius:12px;padding:14px 16px;background:#fff}
+  .sup-donor-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .sup-donor-av{width:34px;height:34px;border-radius:50%;background:#F5C518;color:#111;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+  .sup-donor-nm{font-weight:700;font-size:.9rem}
+  .sup-donor-amt{margin-left:auto;font-weight:800;color:#111;font-size:.85rem;background:#F5C518;padding:2px 10px;border-radius:20px}
+  .sup-donor-msg{font-size:.85rem;color:#666;font-style:italic;line-height:1.5}
+
+  .sup-transparency{background:#111;color:#fff;border-radius:14px;padding:28px;margin-top:24px}
+  .sup-transparency h4{color:#F5C518;font-size:1.05rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .sup-transparency ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  .sup-transparency li{display:flex;gap:10px;font-size:.9rem;color:rgba(255,255,255,.8);line-height:1.5}
+  .sup-transparency li i{color:#F5C518;flex-shrink:0;margin-top:2px}
+
+  .sup-anon{display:flex;align-items:center;gap:8px;font-size:.88rem;color:#555;margin:4px 0 16px;cursor:pointer}
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+
+  <!-- ── HERO ── -->
+  <section class="sup-hero">
+    <div class="cm-container">
+      <div class="sup-hero-inner">
+        <span class="sup-eyebrow"><i class="ri-heart-fill"></i> Le média du peuple</span>
+        <h1>{{ site_settings.donation_headline|default:"Le média du peuple, soutenu par le peuple" }}</h1>
+        <p>{{ site_settings.donation_message|default:"Capture Media informe librement et gratuitement le peuple togolais. Votre soutien, même modeste, garantit notre indépendance et notre liberté de ton." }}</p>
+
+        <div class="sup-trust">
+          <div class="sup-trust-item">
+            <div class="num">{{ stats.donors_count }}</div>
+            <div class="lbl">Soutiens reçus</div>
+          </div>
+          {% if stats.total_collected %}
+          <div class="sup-trust-item">
+            <div class="num">{{ stats.total_collected|floatformat:0 }} <span style="font-size:1rem">FCFA</span></div>
+            <div class="lbl">Collectés ensemble</div>
+          </div>
+          {% endif %}
+          {% if stats.material_count %}
+          <div class="sup-trust-item">
+            <div class="num">{{ stats.material_count }}</div>
+            <div class="lbl">Dons matériels</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sup-wrap">
+    <div class="cm-container">
+
+      <!-- ── THERMOMÈTRE CAMPAGNE ── -->
+      {% if campaign %}
+      <div class="sup-campaign">
+        <h3>{{ campaign.title }}</h3>
+        {% if campaign.description %}<p>{{ campaign.description }}</p>{% endif %}
+        <div class="sup-bar-outer">
+          <div class="sup-bar-inner" style="width:{{ campaign.progress_percentage }}%"></div>
+        </div>
+        <div class="sup-bar-stats">
+          <div>
+            <div class="big">{{ campaign.collected_amount|floatformat:0 }} FCFA</div>
+            <div class="sub">collectés sur un objectif de {{ campaign.goal_amount|floatformat:0 }} FCFA</div>
+          </div>
+          <div class="right">
+            <div class="big">{{ campaign.progress_percentage }}%</div>
+            <div class="sub">{{ campaign.donors_count }} donateur{{ campaign.donors_count|pluralize }}</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="sup-grid">
+
+        <!-- ── COLONNE GAUCHE : FORMULAIRE ── -->
+        <div>
+          <div class="sup-tabs">
+            <button class="sup-tab active" data-panel="financial" type="button">
+              <i class="ri-bank-card-line"></i> Don financier
+            </button>
+            <button class="sup-tab" data-panel="material" type="button">
+              <i class="ri-gift-line"></i> Don matériel
+            </button>
+          </div>
+
+          <!-- PANEL FINANCIER -->
+          <div class="sup-panel active" id="panel-financial">
+
+            {% if channels %}
+            <div class="sup-card" style="margin-bottom:20px;">
+              <h4>1. Effectuez votre don</h4>
+              <p class="hint">Choisissez un moyen de paiement et envoyez votre contribution.</p>
+              <div class="sup-channels">
+                {% for ch in channels %}
+                <div class="sup-channel">
+                  <div class="sup-channel-ic">
+                    {% if ch.logo %}<img src="{{ ch.logo.url }}" alt="{{ ch.name }}">
+                    {% elif ch.channel_type == 'mobile_money' %}<i class="ri-smartphone-line"></i>
+                    {% elif ch.channel_type == 'bank' %}<i class="ri-bank-line"></i>
+                    {% elif ch.channel_type == 'paypal' %}<i class="ri-paypal-line"></i>
+                    {% else %}<i class="ri-wallet-3-line"></i>{% endif %}
+                  </div>
+                  <div class="sup-channel-info">
+                    <div class="nm">{{ ch.name }}</div>
+                    {% if ch.account_number %}<div class="acc" id="acc-{{ ch.id }}">{{ ch.account_number }}</div>{% endif %}
+                    <div class="meta">
+                      {% if ch.account_name %}{{ ch.account_name }}{% endif %}
+                      {% if ch.ussd_code %} · Code : {{ ch.ussd_code }}{% endif %}
+                    </div>
+                    {% if ch.instructions %}<div class="meta">{{ ch.instructions }}</div>{% endif %}
+                  </div>
+                  {% if ch.account_number %}
+                  <button class="sup-copy" type="button" onclick="supCopy('{{ ch.account_number|escapejs }}',this)">
+                    <i class="ri-file-copy-line"></i> Copier
+                  </button>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="sup-card">
+              <h4>{% if channels %}2. {% endif %}Confirmez votre soutien</h4>
+              <p class="hint">Enregistrez votre don pour qu'on puisse vous remercier et le valider.</p>
+              <form action="{% url 'donation_create' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="donation_type" value="financial">
+                {% if campaign %}<input type="hidden" name="campaign" value="{{ campaign.id }}">{% endif %}
+
+                <label class="cm-form-label">Montant du don</label>
+                <div class="sup-amounts">
+                  {% for amt in suggested_amounts %}
+                  <button type="button" class="sup-amount" data-amount="{{ amt }}">{{ amt }} F</button>
+                  {% endfor %}
+                </div>
+                <input type="number" name="amount" id="sup-amount-input" class="cm-form-input" min="1"
+                       placeholder="Autre montant (FCFA)" required style="margin-bottom:16px;">
+
+                <label class="cm-form-label">Moyen utilisé</label>
+                <select name="channel" class="cm-form-input" style="margin-bottom:16px;">
+                  <option value="">— Sélectionner —</option>
+                  {% for ch in channels %}<option value="{{ ch.id }}">{{ ch.name }}</option>{% endfor %}
+                </select>
+
+                <div class="cm-form-grid">
+                  <div>
+                    <label class="cm-form-label">Votre nom</label>
+                    <input type="text" name="donor_name" class="cm-form-input" placeholder="Nom ou pseudo">
+                  </div>
+                  <div>
+                    <label class="cm-form-label">Téléphone</label>
+                    <input type="text" name="donor_phone" class="cm-form-input" placeholder="+228…">
+                  </div>
+                </div>
+                <label class="cm-form-label" style="margin-top:16px;">Référence de la transaction (optionnel)</label>
+                <input type="text" name="transaction_reference" class="cm-form-input" placeholder="ID de paiement Mobile Money" style="margin-bottom:16px;">
+
+                <label class="cm-form-label">Un mot de soutien (optionnel)</label>
+                <textarea name="message" class="cm-form-input" rows="3" placeholder="Pourquoi soutenez-vous Capture Media ?" style="margin-bottom:8px;"></textarea>
+
+                <label class="sup-anon">
+                  <input type="checkbox" name="is_anonymous"> Je souhaite rester anonyme
+                </label>
+
+                <button type="submit" class="cm-btn accent" style="width:100%;justify-content:center;">
+                  <i class="ri-heart-fill"></i> Je soutiens Capture Media
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- PANEL MATÉRIEL -->
+          <div class="sup-panel" id="panel-material">
+            <div class="sup-card">
+              <h4>Offrir du matériel</h4>
+              <p class="hint">Caméra, ordinateur, micro, connexion, véhicule… tout soutien matériel renforce notre rédaction.</p>
+              <form action="{% url 'donation_create' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="donation_type" value="material">
+                {% if campaign %}<input type="hidden" name="campaign" value="{{ campaign.id }}">{% endif %}
+
+                <label class="cm-form-label">Que souhaitez-vous offrir ?</label>
+                <textarea name="item_description" class="cm-form-input" rows="3" required
+                          placeholder="Ex : un ordinateur portable, une caméra, du matériel de tournage…" style="margin-bottom:16px;"></textarea>
+
+                <label class="cm-form-label">Valeur estimée (optionnel, FCFA)</label>
+                <input type="number" name="estimated_value" class="cm-form-input" min="0" placeholder="Ex : 150000" style="margin-bottom:16px;">
+
+                <div class="cm-form-grid">
+                  <div>
+                    <label class="cm-form-label">Votre nom</label>
+                    <input type="text" name="donor_name" class="cm-form-input" placeholder="Nom ou pseudo">
+                  </div>
+                  <div>
+                    <label class="cm-form-label">Téléphone</label>
+                    <input type="text" name="donor_phone" class="cm-form-input" placeholder="+228…">
+                  </div>
+                </div>
+                <label class="cm-form-label" style="margin-top:16px;">Email (optionnel)</label>
+                <input type="email" name="donor_email" class="cm-form-input" placeholder="votre@email.com" style="margin-bottom:16px;">
+
+                <label class="cm-form-label">Un mot (optionnel)</label>
+                <textarea name="message" class="cm-form-input" rows="2" placeholder="Précisez l'état, la disponibilité…" style="margin-bottom:8px;"></textarea>
+
+                <label class="sup-anon">
+                  <input type="checkbox" name="is_anonymous"> Je souhaite rester anonyme
+                </label>
+
+                <button type="submit" class="cm-btn accent" style="width:100%;justify-content:center;">
+                  <i class="ri-gift-line"></i> Proposer ce don matériel
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── COLONNE DROITE : PREUVE SOCIALE + TRANSPARENCE ── -->
+        <aside>
+          {% if donor_wall %}
+          <div class="cm-section-label accent" style="margin-bottom:16px;">
+            <h5>Ils nous soutiennent</h5>
+          </div>
+          <div class="sup-wall">
+            <div class="sup-wall-grid">
+              {% for d in donor_wall %}
+              <div class="sup-donor">
+                <div class="sup-donor-top">
+                  <div class="sup-donor-av">{{ d.public_name|first|upper }}</div>
+                  <div class="sup-donor-nm">{{ d.public_name }}</div>
+                  {% if d.donation_type == 'financial' and d.amount %}
+                  <span class="sup-donor-amt">{{ d.amount|floatformat:0 }} F</span>
+                  {% else %}
+                  <span class="sup-donor-amt"><i class="ri-gift-line"></i> matériel</span>
+                  {% endif %}
+                </div>
+                {% if d.message %}<div class="sup-donor-msg">« {{ d.message|truncatewords:20 }} »</div>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="sup-transparency">
+            <h4><i class="ri-shield-check-line"></i> Notre engagement de transparence</h4>
+            <ul>
+              <li><i class="ri-check-line"></i> Chaque don sert directement à produire et diffuser l'information.</li>
+              <li><i class="ri-check-line"></i> Aucun financement n'influence notre ligne éditoriale.</li>
+              <li><i class="ri-check-line"></i> Votre don est confirmé par notre équipe après réception.</li>
+              <li><i class="ri-check-line"></i> Vous restez libre de donner anonymement.</li>
+            </ul>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Onglets
+  document.querySelectorAll('.sup-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.sup-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sup-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  // Montants suggérés
+  const amtInput = document.getElementById('sup-amount-input');
+  document.querySelectorAll('.sup-amount').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sup-amount').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (amtInput) amtInput.value = btn.dataset.amount;
+    });
+  });
+  if (amtInput) amtInput.addEventListener('input', () => {
+    document.querySelectorAll('.sup-amount').forEach(b => b.classList.remove('active'));
+  });
+
+  // Copier un numéro
+  function supCopy(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const old = btn.innerHTML;
+      btn.innerHTML = '<i class="ri-check-line"></i> Copié';
+      setTimeout(() => btn.innerHTML = old, 1800);
+    });
+  }
+</script>
+{% endblock %}

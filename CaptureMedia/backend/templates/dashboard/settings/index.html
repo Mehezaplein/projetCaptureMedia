@@ -118,6 +118,26 @@
         </div>
 
         <div class="divider" style="margin: 24px 0;"></div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;"><i class="bi bi-heart-fill text-yellow"></i> Page de dons / Soutien</h3>
+
+        <div class="form-group">
+          <label class="form-check">
+            <input type="checkbox" name="donations_enabled" {% if settings.donations_enabled %}checked{% endif %} />
+            <span>Activer la page de dons et les boutons « Soutenir »</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Titre de la page de dons</label>
+          <input type="text" name="donation_headline" class="form-control" value="{{ settings.donation_headline }}" placeholder="Le média du peuple, soutenu par le peuple" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Message d'appel aux dons</label>
+          <textarea name="donation_message" class="form-control" rows="3" placeholder="Expliquez pourquoi le soutien du public est essentiel…">{{ settings.donation_message }}</textarea>
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
 
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-check-lg"></i>

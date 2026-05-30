@@ -72,12 +72,13 @@
           </div>
 
           {% for article in latest_articles|slice:":8" %}
-          {% if article.featured_image %}
           <a href="{% url 'article_detail' article.slug %}" class="cm-article-row" style="display:flex;text-decoration:none;">
+            {% if article.featured_image %}
             <div class="cm-article-row-thumb">
               <img src="{{ article.featured_image.url }}" alt="{{ article.title }}">
             </div>
-            <div class="cm-article-row-body">
+            {% endif %}
+            <div class="cm-article-row-body"{% if not article.featured_image %} style="width:100%;"{% endif %}>
               {% if article.category %}
               <span class="cat-tag">{{ article.category.name }}</span>
               {% endif %}
@@ -89,7 +90,6 @@
               </div>
             </div>
           </a>
-          {% endif %}
           {% endfor %}
 
           <!-- Category sections -->

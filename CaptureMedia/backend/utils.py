@@ -8,7 +8,7 @@ PLATFORM_PATTERNS = [
     ('tiktok', [r'tiktok\.com/']),
     ('instagram', [r'instagram\.com/(?:p|reel|tv)/']),
     ('twitter', [r'(?:twitter|x)\.com/\w+/status/']),
-    ('facebook', [r'facebook\.com/(?:watch|video|reel|\w+/videos)/']),
+    ('facebook', [r'facebook\.com/(?:watch|video|reel|\w+/videos)/', r'fb\.watch/']),
     ('whatsapp', [r'(?:wa\.me|whatsapp\.com/)']),
 ]
 
